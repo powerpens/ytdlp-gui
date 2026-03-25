@@ -283,6 +283,11 @@ final class AppViewModel: ObservableObject {
         return libraryStore.items.first(where: { $0.id == selectedLibraryItemID })
     }
 
+    private var selectedLibraryIndex: Int? {
+        guard let selectedLibraryItemID else { return nil }
+        return libraryStore.items.firstIndex(where: { $0.id == selectedLibraryItemID })
+    }
+
     func openLibraryFolder() {
         NSWorkspace.shared.open(libraryStore.rootFolderURL)
     }
@@ -304,8 +309,31 @@ final class AppViewModel: ObservableObject {
     }
 
     func quickLookSelectedLibraryItem() {
-        guard let item = selectedLibraryItem else { return }
-        QuickLookPreviewController.shared.present(url: item.url)
+        guard selectedLibraryItem != nil else { return }
+        QuickLookPreviewController.shared.present()
+    }
+
+    var canSelectPreviousLibraryItem: Bool {
+        selectedSection == .library && selectedLibraryIndex.map { $0 > 0 } == true
+    }
+
+    var canSelectNextLibraryItem: Bool {
+        selectedSection == .library && selectedLibraryIndex.map { $0 < libraryStore.items.count - 1 } == true
+    }
+
+    func selectPreviousLibraryItem() {
+        guard let index = selectedLibraryIndex, index > 0 else { return }
+        selectedLibraryItemID = libraryStore.items[index - 1].id
+    }
+
+    func selectNextLibraryItem() {
+        guard let index = selectedLibraryIndex, index < libraryStore.items.count - 1 else { return }
+        selectedLibraryItemID = libraryStore.items[index + 1].id
+    }
+
+    func selectLibraryItem(at index: Int) {
+        guard libraryStore.items.indices.contains(index) else { return }
+        selectedLibraryItemID = libraryStore.items[index].id
     }
 
     private static func prettifiedTitle(from line: String, fallback: String) -> String {

@@ -80,6 +80,18 @@ struct YTDLPGUIApp: App {
                 }
                 .keyboardShortcut(.space, modifiers: [])
                 .disabled(!viewModel.canQuickLookSelectedLibraryItem)
+
+                Button("Select Previous Library Item") {
+                    viewModel.selectPreviousLibraryItem()
+                }
+                .keyboardShortcut(.upArrow, modifiers: [])
+                .disabled(!viewModel.canSelectPreviousLibraryItem)
+
+                Button("Select Next Library Item") {
+                    viewModel.selectNextLibraryItem()
+                }
+                .keyboardShortcut(.downArrow, modifiers: [])
+                .disabled(!viewModel.canSelectNextLibraryItem)
             }
         }
     }

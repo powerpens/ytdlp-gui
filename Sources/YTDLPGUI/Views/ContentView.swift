@@ -11,6 +11,7 @@ struct ContentView: View {
         } detail: {
             detailContent
         }
+        .background(QuickLookPanelBridge().environmentObject(viewModel))
         .navigationSplitViewStyle(.balanced)
         .toolbar {
             ToolbarItemGroup {
