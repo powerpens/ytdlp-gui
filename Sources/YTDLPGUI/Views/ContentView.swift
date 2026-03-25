@@ -967,6 +967,14 @@ struct SettingsView: View {
     @EnvironmentObject private var viewModel: AppViewModel
     @State private var isShowingSpotDLSetup = false
 
+    private var isRepairingSpotDL: Bool {
+        toolchainManager.status.spotDL?.healthError != nil
+    }
+
+    private var spotDLActionTitle: String {
+        isRepairingSpotDL ? "Open spotDL Repair" : "Open spotDL Setup"
+    }
+
     var body: some View {
         Form {
             Section("Toolchain") {
@@ -1001,7 +1009,7 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
 
                     HStack {
-                        Button("Open spotDL Setup") {
+                        Button(spotDLActionTitle) {
                             isShowingSpotDLSetup = true
                         }
 
@@ -1072,11 +1080,14 @@ struct SettingsView: View {
         .frame(width: 560)
         .sheet(isPresented: $isShowingSpotDLSetup) {
             SpotDLSetupSheet(
+                isRepairing: isRepairingSpotDL,
                 command: toolchainManager.spotDLInstallCommand,
                 onCopied: {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(toolchainManager.spotDLInstallCommand, forType: .string)
-                    viewModel.infoBanner = "spotDL setup command copied to the clipboard."
+                    viewModel.infoBanner = isRepairingSpotDL
+                        ? "spotDL repair command copied to the clipboard."
+                        : "spotDL setup command copied to the clipboard."
                 },
                 onRecheck: {
                     toolchainManager.refresh()
@@ -1088,6 +1099,7 @@ struct SettingsView: View {
 }
 
 private struct SpotDLSetupSheet: View {
+    let isRepairing: Bool
     let command: String
     let onCopied: () -> Void
     let onRecheck: () -> Void
@@ -1095,15 +1107,19 @@ private struct SpotDLSetupSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text("Set Up Spotify Music Downloads")
+            Text(isRepairing ? "Repair Spotify Music Downloads" : "Set Up Spotify Music Downloads")
                 .font(.title2.weight(.semibold))
 
-            Text("spotDL is installed most reliably from Terminal, so the app will guide you instead of trying to manage your Python environment itself.")
+            Text(
+                isRepairing
+                    ? "spotDL is installed, but its Python environment needs a quick repair. Run this in Terminal, then come back and re-check the toolchain."
+                    : "spotDL is installed most reliably from Terminal, so the app will guide you instead of trying to manage your Python environment itself."
+            )
                 .foregroundStyle(.secondary)
 
             VStack(alignment: .leading, spacing: 10) {
                 setupStep(number: "1", text: "Open Terminal.")
-                setupStep(number: "2", text: "Run this command:")
+                setupStep(number: "2", text: isRepairing ? "Run this repair command:" : "Run this command:")
 
                 Text(command)
                     .font(.callout.monospaced())
@@ -1116,7 +1132,7 @@ private struct SpotDLSetupSheet: View {
             }
 
             HStack {
-                Button("Copy Command") {
+                Button(isRepairing ? "Copy Repair Command" : "Copy Command") {
                     onCopied()
                 }
 
