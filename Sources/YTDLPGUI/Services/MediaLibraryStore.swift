@@ -1,6 +1,6 @@
 import AppKit
+import AVFoundation
 import Foundation
-@preconcurrency import QuickLookThumbnailing
 
 @MainActor
 final class MediaLibraryStore: ObservableObject {
@@ -95,23 +95,14 @@ final class MediaLibraryStore: ObservableObject {
             return fallback
         }
 
-        let request = QLThumbnailGenerator.Request(
-            fileAt: item.url,
-            size: size,
-            scale: NSScreen.main?.backingScaleFactor ?? 2,
-            representationTypes: .thumbnail
-        )
-
-        do {
-            let thumbnail = try await generateThumbnail(request: request)
-            let image = thumbnail.nsImage
+        if let image = Self.generateVideoThumbnail(for: item.url, size: size) {
             thumbnailCache.setObject(image, forKey: cacheKey)
             return image
-        } catch {
-            let fallback = icon(for: item)
-            thumbnailCache.setObject(fallback, forKey: cacheKey)
-            return fallback
         }
+
+        let fallback = icon(for: item)
+        thumbnailCache.setObject(fallback, forKey: cacheKey)
+        return fallback
     }
 
     private func ensureRootFolderExists() {
@@ -129,15 +120,17 @@ final class MediaLibraryStore: ObservableObject {
         return .other
     }
 
-    private func generateThumbnail(request: QLThumbnailGenerator.Request) async throws -> QLThumbnailRepresentation {
-        try await withCheckedThrowingContinuation { continuation in
-            QLThumbnailGenerator.shared.generateBestRepresentation(for: request) { thumbnail, error in
-                if let thumbnail {
-                    continuation.resume(returning: thumbnail)
-                } else {
-                    continuation.resume(throwing: error ?? CocoaError(.fileReadUnknown))
-                }
-            }
+    private static func generateVideoThumbnail(for url: URL, size: CGSize) -> NSImage? {
+        let asset = AVURLAsset(url: url)
+        let generator = AVAssetImageGenerator(asset: asset)
+        generator.appliesPreferredTrackTransform = true
+        generator.maximumSize = size
+
+        do {
+            let cgImage = try generator.copyCGImage(at: .zero, actualTime: nil)
+            return NSImage(cgImage: cgImage, size: .zero)
+        } catch {
+            return nil
         }
     }
 }
