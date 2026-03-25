@@ -74,6 +74,12 @@ struct YTDLPGUIApp: App {
                     viewModel.pasteFromClipboard()
                 }
                 .keyboardShortcut("v", modifiers: [.command, .shift])
+
+                Button("Quick Look") {
+                    viewModel.quickLookSelectedLibraryItem()
+                }
+                .keyboardShortcut(.space, modifiers: [])
+                .disabled(!viewModel.canQuickLookSelectedLibraryItem)
             }
         }
     }

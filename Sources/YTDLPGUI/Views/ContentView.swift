@@ -693,6 +693,9 @@ private struct LibraryDetailPane: View {
             Spacer()
 
             HStack {
+                Button("Quick Look") {
+                    viewModel.quickLookSelectedLibraryItem()
+                }
                 Button("Reveal in Finder") {
                     viewModel.revealLibraryItem(item)
                 }

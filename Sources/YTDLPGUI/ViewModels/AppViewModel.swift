@@ -299,6 +299,15 @@ final class AppViewModel: ObservableObject {
         libraryStore.reveal(item)
     }
 
+    var canQuickLookSelectedLibraryItem: Bool {
+        selectedSection == .library && selectedLibraryItem != nil
+    }
+
+    func quickLookSelectedLibraryItem() {
+        guard let item = selectedLibraryItem else { return }
+        QuickLookPreviewController.shared.present(url: item.url)
+    }
+
     private static func prettifiedTitle(from line: String, fallback: String) -> String {
         if line.contains("[download] Downloading item") {
             return line.replacingOccurrences(of: "[download] ", with: "")
