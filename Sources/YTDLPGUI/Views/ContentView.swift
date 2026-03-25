@@ -691,16 +691,18 @@ private struct LibraryBrowserView: View {
 
     private func galleryColumns(for availableWidth: CGFloat) -> [GridItem] {
         let columnCount: Int
-        if availableWidth < 460 {
+        if availableWidth < 640 {
             columnCount = 1
-        } else if availableWidth < 760 {
+        } else if availableWidth < 980 {
             columnCount = 2
+        } else if availableWidth < 1320 {
+            columnCount = 3
         } else {
-            columnCount = max(2, Int((availableWidth + 16) / 236))
+            columnCount = 4
         }
 
         return Array(
-            repeating: GridItem(.flexible(minimum: 0, maximum: .infinity), spacing: 16, alignment: .top),
+            repeating: GridItem(.flexible(minimum: 240, maximum: 360), spacing: 16, alignment: .top),
             count: columnCount
         )
     }
@@ -812,16 +814,16 @@ private struct LibraryItemCard: View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 10) {
                 LibraryPreviewImage(item: item, size: CGSize(width: 220, height: 140))
-                    .frame(height: 128)
+                    .aspectRatio(16 / 9, contentMode: .fit)
                     .frame(maxWidth: .infinity)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 Text(item.displayTitle)
                     .font(.headline)
-                    .lineLimit(2)
+                    .lineLimit(3)
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .frame(height: 46, alignment: .topLeading)
+                    .frame(minHeight: 60, alignment: .topLeading)
                     .fixedSize(horizontal: false, vertical: true)
 
                 VStack(alignment: .leading, spacing: 4) {
@@ -833,14 +835,16 @@ private struct LibraryItemCard: View {
                     HStack {
                         Text(item.kind.title)
                         Spacer()
-                        Text(item.durationText ?? item.fileExtension)
+                        Text([item.fileExtension, item.durationText]
+                            .compactMap { $0 }
+                            .joined(separator: " • "))
                     }
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
             }
             .padding(14)
-            .frame(maxWidth: .infinity, minHeight: 220, maxHeight: 220, alignment: .topLeading)
+            .frame(maxWidth: .infinity, minHeight: 252, alignment: .topLeading)
             .background(isSelected ? Color.accentColor.opacity(0.14) : Color(nsColor: .controlBackgroundColor))
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .contentShape(RoundedRectangle(cornerRadius: 16))
