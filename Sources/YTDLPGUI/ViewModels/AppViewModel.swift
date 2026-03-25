@@ -116,7 +116,7 @@ final class AppViewModel: ObservableObject {
             presentAlert(
                 title: "Download Tools Missing",
                 message: selectedDownloadMode == .spotifyMusic
-                    ? "spotDL and ffmpeg both need to be available before a Spotify music download can start.\n\nOpen Settings to install or inspect the toolchain."
+                    ? "spotDL and ffmpeg both need to be healthy before a Spotify music download can start.\n\nOpen Settings to install or repair the toolchain."
                     : "yt-dlp and ffmpeg both need to be available before a download can start.\n\nOpen Settings to install or inspect the toolchain."
             )
             return

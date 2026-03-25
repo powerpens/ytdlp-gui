@@ -3,6 +3,7 @@ import Foundation
 struct ToolBinary: Codable, Equatable {
     let path: String
     let version: String?
+    let healthError: String?
 }
 
 struct ToolchainStatus: Codable, Equatable {
@@ -19,7 +20,7 @@ struct ToolchainStatus: Codable, Equatable {
         case .video, .audio:
             ytDLP != nil && ffmpeg != nil
         case .spotifyMusic:
-            spotDL != nil && ffmpeg != nil
+            spotDL != nil && spotDL?.healthError == nil && ffmpeg != nil
         }
     }
 }
@@ -69,19 +70,27 @@ final class ToolchainManager: ObservableObject {
     }
 
     var needsSpotDLManualSetup: Bool {
-        status.spotDL == nil
+        status.spotDL == nil || status.spotDL?.healthError != nil
     }
 
     var spotDLInstallCommand: String {
+        let shouldRepairExistingSpotDL = status.spotDL != nil
+
         if resolveCommand(named: "pipx") != nil {
-            return "pipx install spotdl"
+            return shouldRepairExistingSpotDL
+                ? "pipx reinstall spotdl\npipx inject spotdl setuptools"
+                : "pipx install spotdl\npipx inject spotdl setuptools"
         }
 
         if resolveCommand(named: "brew") != nil {
-            return "brew install pipx\npipx install spotdl"
+            return shouldRepairExistingSpotDL
+                ? "brew install pipx\npipx reinstall spotdl\npipx inject spotdl setuptools"
+                : "brew install pipx\npipx install spotdl\npipx inject spotdl setuptools"
         }
 
-        return "pipx install spotdl"
+        return shouldRepairExistingSpotDL
+            ? "pipx reinstall spotdl\npipx inject spotdl setuptools"
+            : "pipx install spotdl\npipx inject spotdl setuptools"
     }
 
     func refresh() {
@@ -126,12 +135,15 @@ final class ToolchainManager: ObservableObject {
             return nil
         }
 
-        let version = try? ProcessRunner.run(path, arguments: ["--version"])
+        let result = try? ProcessRunner.runResult(path, arguments: ["--version"])
+        let output = result?.output.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let version = output
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .components(separatedBy: .newlines)
             .first
+        let healthError = inferredHealthError(for: command, output: output, terminationStatus: result?.terminationStatus ?? 0)
 
-        return ToolBinary(path: path, version: version)
+        return ToolBinary(path: path, version: version, healthError: healthError)
     }
 
     private func resolveCommand(named command: String) -> String? {
@@ -140,6 +152,23 @@ final class ToolchainManager: ObservableObject {
         }
 
         return ProcessRunner.which(command)
+    }
+
+    private func inferredHealthError(for command: String, output: String, terminationStatus: Int32) -> String? {
+        guard terminationStatus != 0 || output.lowercased().contains("module") || output.lowercased().contains("traceback") else {
+            return nil
+        }
+
+        let normalized = output.lowercased()
+        if command == "spotdl", normalized.contains("pkg_resources") {
+            return "spotDL is installed, but its Python environment is missing setuptools/pkg_resources."
+        }
+
+        if output.isEmpty {
+            return "\(command) is installed but not responding correctly."
+        }
+
+        return output.components(separatedBy: .newlines).first(where: { !$0.isEmpty }) ?? "\(command) is installed but not responding correctly."
     }
 }
 

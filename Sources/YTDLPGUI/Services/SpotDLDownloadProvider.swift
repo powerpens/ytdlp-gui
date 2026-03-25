@@ -339,7 +339,7 @@ final class SpotDLDownloadProvider: @unchecked Sendable, DownloadProvider {
         return nil
     }
 
-    private static func inferFailure(from lines: [String], terminationStatus: Int) -> DownloadFailure {
+    static func inferFailure(from lines: [String], terminationStatus: Int) -> DownloadFailure {
         let likelyErrorLine = lines.reversed().first(where: { $0.lowercased().contains("error") }) ?? lines.last ?? "spotDL exited with status \(terminationStatus)"
         let normalized = likelyErrorLine.lowercased()
 
@@ -366,6 +366,15 @@ final class SpotDLDownloadProvider: @unchecked Sendable, DownloadProvider {
                 category: .authentication,
                 summary: "spotDL couldn't resolve the Spotify item metadata.",
                 recoverySuggestion: "Check that the Spotify link is public and retry.",
+                technicalDetails: likelyErrorLine
+            )
+        }
+
+        if normalized.contains("pkg_resources") || normalized.contains("setuptools") {
+            return DownloadFailure(
+                category: .missingTools,
+                summary: "spotDL is installed, but its Python environment is missing setuptools/pkg_resources.",
+                recoverySuggestion: "Open Settings and run the spotDL repair command, then retry the download.",
                 technicalDetails: likelyErrorLine
             )
         }

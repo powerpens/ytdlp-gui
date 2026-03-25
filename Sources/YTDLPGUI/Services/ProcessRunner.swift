@@ -4,8 +4,17 @@ enum ProcessRunnerError: Error {
     case executableNotFound(String)
 }
 
+struct ProcessRunnerResult {
+    let output: String
+    let terminationStatus: Int32
+}
+
 enum ProcessRunner {
     static func run(_ executable: String, arguments: [String]) throws -> String {
+        try runResult(executable, arguments: arguments).output
+    }
+
+    static func runResult(_ executable: String, arguments: [String]) throws -> ProcessRunnerResult {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: executable)
         process.arguments = arguments
@@ -18,7 +27,10 @@ enum ProcessRunner {
         process.waitUntilExit()
 
         let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
-        return String(decoding: data, as: UTF8.self)
+        return ProcessRunnerResult(
+            output: String(decoding: data, as: UTF8.self),
+            terminationStatus: process.terminationStatus
+        )
     }
 
     static func which(_ command: String) -> String? {

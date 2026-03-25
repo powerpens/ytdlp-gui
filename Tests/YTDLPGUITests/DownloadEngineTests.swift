@@ -125,4 +125,15 @@ struct DownloadEngineTests {
         let title = SpotDLDownloadProvider.parseDisplayTitle(from: "Downloading Chef Paul - Carbonara")
         #expect(title == "Chef Paul - Carbonara")
     }
+
+    @Test
+    func classifiesBrokenSpotDLEnvironment() {
+        let failure = SpotDLDownloadProvider.inferFailure(
+            from: ["ModuleNotFoundError: No module named 'pkg_resources'"],
+            terminationStatus: 1
+        )
+
+        #expect(failure.category == .missingTools)
+        #expect(failure.summary.contains("pkg_resources"))
+    }
 }

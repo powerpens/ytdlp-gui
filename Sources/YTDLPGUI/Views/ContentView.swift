@@ -981,12 +981,23 @@ struct SettingsView: View {
                 }
 
                 LabeledContent("spotDL") {
-                    Text(toolchainManager.status.spotDL?.path ?? "Missing")
-                        .foregroundStyle(toolchainManager.status.spotDL == nil ? .orange : .primary)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(toolchainManager.status.spotDL?.path ?? "Missing")
+                            .foregroundStyle(toolchainManager.status.spotDL == nil ? .orange : .primary)
+
+                        if let healthError = toolchainManager.status.spotDL?.healthError {
+                            Text(healthError)
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
+                    }
                 }
 
                 if toolchainManager.needsSpotDLManualSetup {
-                    Label("spotDL needs a one-time Terminal install.", systemImage: "terminal")
+                    Label(toolchainManager.status.spotDL?.healthError == nil
+                          ? "spotDL needs a one-time Terminal install."
+                          : "spotDL needs a quick repair in Terminal.",
+                          systemImage: "terminal")
                         .foregroundStyle(.secondary)
 
                     HStack {
