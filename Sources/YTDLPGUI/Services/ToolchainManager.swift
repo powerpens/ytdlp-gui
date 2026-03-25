@@ -64,6 +64,26 @@ final class ToolchainManager: ObservableObject {
         refresh()
     }
 
+    var hasMissingMediaTools: Bool {
+        status.ytDLP == nil || status.ffmpeg == nil
+    }
+
+    var needsSpotDLManualSetup: Bool {
+        status.spotDL == nil
+    }
+
+    var spotDLInstallCommand: String {
+        if resolveCommand(named: "pipx") != nil {
+            return "pipx install spotdl"
+        }
+
+        if resolveCommand(named: "brew") != nil {
+            return "brew install pipx\npipx install spotdl"
+        }
+
+        return "pipx install spotdl"
+    }
+
     func refresh() {
         status = ToolchainStatus(
             ytDLP: resolveBinary(named: "yt-dlp"),
@@ -90,24 +110,11 @@ final class ToolchainManager: ObservableObject {
             installLog += output
         }
 
-        if status.spotDL == nil {
-            if let pipxPath = resolveCommand(named: "pipx") {
-                installLog += try ProcessRunner.run(pipxPath, arguments: ["install", "spotdl"])
-            } else if let python3Path = resolveCommand(named: "python3") {
-                installLog += try ProcessRunner.run(python3Path, arguments: ["-m", "pip", "install", "--user", "spotdl"])
-            } else {
-                throw ToolchainInstallError.installFailed("spotDL is missing and neither pipx nor python3 is available to install it.")
-            }
-        }
-
         refresh()
 
         guard status.ytDLP != nil, status.ffmpeg != nil else {
             refresh()
             throw ToolchainInstallError.installFailed("Installation finished but yt-dlp or ffmpeg is still unavailable.")
-        }
-        guard status.spotDL != nil else {
-            throw ToolchainInstallError.installFailed("Installation finished but spotDL is still unavailable.")
         }
     }
 

@@ -25,4 +25,13 @@ struct ToolchainManagerTests {
         #expect(manager.testingResolveCommand(named: "brew") != nil)
         #expect(manager.testingResolveCommand(named: "python3") != nil)
     }
+
+    @Test
+    func prefersGuidedSpotDLInstallCommand() {
+        let manager = ToolchainManager()
+
+        let command = manager.spotDLInstallCommand
+        #expect(!command.isEmpty)
+        #expect(command.contains("spotdl"))
+    }
 }

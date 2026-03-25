@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import UniformTypeIdentifiers
 
 struct ContentView: View {
@@ -941,13 +942,42 @@ struct SettingsView: View {
                         .foregroundStyle(toolchainManager.status.spotDL == nil ? .orange : .primary)
                 }
 
-                if !toolchainManager.status.isReady || toolchainManager.status.spotDL == nil {
-                    Text("This app can install yt-dlp and ffmpeg with Homebrew, then install spotDL with pipx or python3 -m pip when needed.")
+                if toolchainManager.hasMissingMediaTools {
+                    Text("This app can install yt-dlp and ffmpeg with Homebrew when they are missing.")
                         .foregroundStyle(.secondary)
-                    Button(toolchainManager.isInstalling ? "Installing..." : "Install Missing Tools") {
+                    Button(toolchainManager.isInstalling ? "Installing..." : "Install Missing Media Tools") {
                         viewModel.installMissingTools()
                     }
                     .disabled(toolchainManager.isInstalling)
+                }
+
+                if toolchainManager.needsSpotDLManualSetup {
+                    Text("spotDL works best as a manual Terminal install so the app does not have to manage your Python environment.")
+                        .foregroundStyle(.secondary)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Run in Terminal")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        Text(toolchainManager.spotDLInstallCommand)
+                            .font(.caption.monospaced())
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(10)
+                            .background(Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+
+                        HStack {
+                            Button("Copy spotDL Command") {
+                                NSPasteboard.general.clearContents()
+                                NSPasteboard.general.setString(toolchainManager.spotDLInstallCommand, forType: .string)
+                                viewModel.infoBanner = "spotDL setup command copied to the clipboard."
+                            }
+
+                            Button("Re-check Tools") {
+                                toolchainManager.refresh()
+                            }
+                        }
+                    }
                 }
 
                 if !toolchainManager.installLog.isEmpty {
