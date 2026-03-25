@@ -40,6 +40,17 @@
                ReferencedContainer = "container:YTDLPGUI.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "A00000000000000000000402"
+               BuildableName = "YTDLPGUIUITests.xctest"
+               BlueprintName = "YTDLPGUIUITests"
+               ReferencedContainer = "container:YTDLPGUI.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

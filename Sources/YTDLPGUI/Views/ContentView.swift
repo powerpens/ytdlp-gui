@@ -74,6 +74,7 @@ struct ContentView: View {
                 ) {
                     viewModel.selectedSection = .downloads
                 }
+                .accessibilityIdentifier("sidebar.downloads")
 
                 SidebarButton(
                     title: "Library",
@@ -83,6 +84,7 @@ struct ContentView: View {
                 ) {
                     viewModel.selectedSection = .library
                 }
+                .accessibilityIdentifier("sidebar.library")
             }
 
             if !toolchainManager.status.isReady {
@@ -509,10 +511,12 @@ private struct LibraryBrowserView: View {
                         }
                         .pickerStyle(.segmented)
                         .frame(width: 170)
+                        .accessibilityIdentifier("library.viewPicker")
 
                         Button("Open in Finder") {
                             viewModel.openLibraryFolder()
                         }
+                        .accessibilityIdentifier("library.openInFinder")
                     }
 
                     if viewModel.libraryStore.items.isEmpty {
@@ -536,6 +540,7 @@ private struct LibraryBrowserView: View {
                                         }
                                     }
                                 }
+                                .accessibilityIdentifier("library.list")
                                 .padding(.vertical, 4)
                             } else {
                                 LazyVGrid(columns: galleryColumns, spacing: 16) {
@@ -548,6 +553,7 @@ private struct LibraryBrowserView: View {
                                         }
                                     }
                                 }
+                                .accessibilityIdentifier("library.gallery")
                                 .padding(.vertical, 4)
                             }
                         }
@@ -618,6 +624,7 @@ private struct LibraryListRow: View {
             .clipShape(RoundedRectangle(cornerRadius: 14))
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("library.listRow.\(item.fileName)")
     }
 }
 
@@ -655,6 +662,7 @@ private struct LibraryItemCard: View {
             .clipShape(RoundedRectangle(cornerRadius: 16))
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("library.galleryItem.\(item.fileName)")
     }
 }
 

@@ -3,6 +3,8 @@ import Foundation
 
 @MainActor
 final class AppViewModel: ObservableObject {
+    static let uiTestInitialSectionEnvironmentKey = "YTDLPGUI_UI_TEST_INITIAL_SECTION"
+
     enum WorkspaceSection: String, CaseIterable, Identifiable {
         case downloads
         case library
@@ -57,6 +59,11 @@ final class AppViewModel: ObservableObject {
         selectedPreset = preferences.preferredPreset
         destinationPath = preferences.defaultDestinationPath
         recentJobs = historyStore.load()
+
+        if let sectionRawValue = ProcessInfo.processInfo.environment[Self.uiTestInitialSectionEnvironmentKey],
+           let section = WorkspaceSection(rawValue: sectionRawValue) {
+            selectedSection = section
+        }
     }
 
     var canStartDownload: Bool {

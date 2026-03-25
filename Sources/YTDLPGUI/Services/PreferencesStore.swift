@@ -2,6 +2,8 @@ import Foundation
 
 @MainActor
 final class PreferencesStore: ObservableObject {
+    static let uiTestLibraryPathEnvironmentKey = "YTDLPGUI_UI_TEST_LIBRARY_PATH"
+
     @Published var preferredPreset: MediaPreset {
         didSet { defaults.set(preferredPreset.rawValue, forKey: Keys.preferredPreset) }
     }
@@ -28,9 +30,16 @@ final class PreferencesStore: ObservableObject {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        try? FileManager.default.createDirectory(at: Self.defaultLibraryURL, withIntermediateDirectories: true)
+
+        let uiTestLibraryPath = ProcessInfo.processInfo.environment[Self.uiTestLibraryPathEnvironmentKey]
+        if let uiTestLibraryPath {
+            try? FileManager.default.createDirectory(atPath: uiTestLibraryPath, withIntermediateDirectories: true)
+        } else {
+            try? FileManager.default.createDirectory(at: Self.defaultLibraryURL, withIntermediateDirectories: true)
+        }
+
         preferredPreset = MediaPreset(rawValue: defaults.string(forKey: Keys.preferredPreset) ?? "") ?? .bestVideo
-        defaultDestinationPath = defaults.string(forKey: Keys.defaultDestinationPath) ?? Self.defaultLibraryURL.path
+        defaultDestinationPath = uiTestLibraryPath ?? defaults.string(forKey: Keys.defaultDestinationPath) ?? Self.defaultLibraryURL.path
         let storedLimit = defaults.integer(forKey: Keys.concurrencyLimit)
         concurrencyLimit = storedLimit > 0 ? storedLimit : 2
     }

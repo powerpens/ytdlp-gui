@@ -22,10 +22,19 @@
 		A0000000000000000000010B /* DownloadEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000B /* DownloadEngineTests.swift */; };
 		A0000000000000000000010C /* HistoryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000C /* HistoryStoreTests.swift */; };
 		A0000000000000000000010D /* PreferencesStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000D /* PreferencesStoreTests.swift */; };
+		A0000000000000000000010E /* MediaLibraryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000010 /* MediaLibraryStoreTests.swift */; };
+		A0000000000000000000010F /* YTDLPGUIUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000011 /* YTDLPGUIUITests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		A00000000000000000000201 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A00000000000000000000300 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A00000000000000000000400;
+			remoteInfo = YTDLPGUI;
+		};
+		A00000000000000000000202 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = A00000000000000000000300 /* Project object */;
 			proxyType = 1;
@@ -52,6 +61,9 @@
 		A0000000000000000000000D /* PreferencesStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesStoreTests.swift; sourceTree = "<group>"; };
 		A0000000000000000000000E /* YTDLPGUI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = YTDLPGUI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A0000000000000000000000F /* YTDLPGUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = YTDLPGUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A00000000000000000000010 /* MediaLibraryStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaLibraryStoreTests.swift; sourceTree = "<group>"; };
+		A00000000000000000000011 /* YTDLPGUIUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YTDLPGUIUITests.swift; sourceTree = "<group>"; };
+		A00000000000000000000012 /* YTDLPGUIUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = YTDLPGUIUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -63,6 +75,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A00000000000000000000501 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A00000000000000000000506 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -93,6 +112,7 @@
 			isa = PBXGroup;
 			children = (
 				A00000000000000000000609 /* YTDLPGUITests */,
+				A0000000000000000000060A /* YTDLPGUIUITests */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -102,6 +122,7 @@
 			children = (
 				A0000000000000000000000E /* YTDLPGUI.app */,
 				A0000000000000000000000F /* YTDLPGUITests.xctest */,
+				A00000000000000000000012 /* YTDLPGUIUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -163,8 +184,17 @@
 				A0000000000000000000000B /* DownloadEngineTests.swift */,
 				A0000000000000000000000C /* HistoryStoreTests.swift */,
 				A0000000000000000000000D /* PreferencesStoreTests.swift */,
+				A00000000000000000000010 /* MediaLibraryStoreTests.swift */,
 			);
 			path = YTDLPGUITests;
+			sourceTree = "<group>";
+		};
+		A0000000000000000000060A /* YTDLPGUIUITests */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000011 /* YTDLPGUIUITests.swift */,
+			);
+			path = YTDLPGUIUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -205,6 +235,24 @@
 			productReference = A0000000000000000000000F /* YTDLPGUITests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		A00000000000000000000402 /* YTDLPGUIUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A00000000000000000000703 /* Build configuration list for PBXNativeTarget "YTDLPGUIUITests" */;
+			buildPhases = (
+				A00000000000000000000507 /* Sources */,
+				A00000000000000000000506 /* Frameworks */,
+				A00000000000000000000508 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A00000000000000000000801 /* PBXTargetDependency */,
+			);
+			name = YTDLPGUIUITests;
+			productName = YTDLPGUIUITests;
+			productReference = A00000000000000000000012 /* YTDLPGUIUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -219,6 +267,10 @@
 						CreatedOnToolsVersion = 16.4;
 					};
 					A00000000000000000000401 = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = A00000000000000000000400;
+					};
+					A00000000000000000000402 = {
 						CreatedOnToolsVersion = 16.4;
 						TestTargetID = A00000000000000000000400;
 					};
@@ -241,6 +293,7 @@
 			targets = (
 				A00000000000000000000400 /* YTDLPGUI */,
 				A00000000000000000000401 /* YTDLPGUITests */,
+				A00000000000000000000402 /* YTDLPGUIUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -254,6 +307,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A00000000000000000000505 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A00000000000000000000508 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -289,6 +349,15 @@
 				A0000000000000000000010B /* DownloadEngineTests.swift in Sources */,
 				A0000000000000000000010C /* HistoryStoreTests.swift in Sources */,
 				A0000000000000000000010D /* PreferencesStoreTests.swift in Sources */,
+				A0000000000000000000010E /* MediaLibraryStoreTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A00000000000000000000507 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A0000000000000000000010F /* YTDLPGUIUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -299,6 +368,11 @@
 			isa = PBXTargetDependency;
 			target = A00000000000000000000400 /* YTDLPGUI */;
 			targetProxy = A00000000000000000000201 /* PBXContainerItemProxy */;
+		};
+		A00000000000000000000801 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A00000000000000000000400 /* YTDLPGUI */;
+			targetProxy = A00000000000000000000202 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -449,6 +523,37 @@
 			};
 			name = Release;
 		};
+		A00000000000000000000906 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.silashowe.YTDLPGUIUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+				TEST_TARGET_NAME = YTDLPGUI;
+			};
+			name = Debug;
+		};
+		A00000000000000000000907 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.silashowe.YTDLPGUIUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 6.0;
+				TEST_TARGET_NAME = YTDLPGUI;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -475,6 +580,15 @@
 			buildConfigurations = (
 				A00000000000000000000900 /* Debug */,
 				A00000000000000000000901 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A00000000000000000000703 /* Build configuration list for PBXNativeTarget "YTDLPGUIUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A00000000000000000000906 /* Debug */,
+				A00000000000000000000907 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
