@@ -4,16 +4,24 @@ import Foundation
 
 @MainActor
 final class MediaLibraryStore: ObservableObject {
+    typealias ThumbnailProvider = (URL, CGSize, @escaping (NSImage?) -> Void) -> Void
+
     @Published private(set) var rootFolderURL: URL
     @Published private(set) var items: [LibraryMediaItem] = []
     @Published private(set) var lastRefreshAt: Date?
 
     private let fileManager: FileManager
     private let thumbnailCache = NSCache<NSURL, NSImage>()
+    private let thumbnailProvider: ThumbnailProvider
 
-    init(rootFolderURL: URL, fileManager: FileManager = .default) {
+    init(
+        rootFolderURL: URL,
+        fileManager: FileManager = .default,
+        thumbnailProvider: @escaping ThumbnailProvider = MediaLibraryStore.quickLookThumbnail
+    ) {
         self.rootFolderURL = rootFolderURL
         self.fileManager = fileManager
+        self.thumbnailProvider = thumbnailProvider
         ensureRootFolderExists()
         refresh()
     }
@@ -102,20 +110,13 @@ final class MediaLibraryStore: ObservableObject {
             return
         }
 
-        let request = QLThumbnailGenerator.Request(
-            fileAt: item.url,
-            size: size,
-            scale: NSScreen.main?.backingScaleFactor ?? 2,
-            representationTypes: [.thumbnail, .lowQualityThumbnail]
-        )
-
-        QLThumbnailGenerator.shared.generateBestRepresentation(for: request) { [weak self] thumbnail, _ in
+        thumbnailProvider(item.url, size) { [weak self] image in
             DispatchQueue.main.async {
                 guard let self else { return }
 
-                let image = thumbnail?.nsImage ?? self.icon(for: item)
-                self.thumbnailCache.setObject(image, forKey: cacheKey)
-                completion(image)
+                let resolvedImage = image ?? self.icon(for: item)
+                self.thumbnailCache.setObject(resolvedImage, forKey: cacheKey)
+                completion(resolvedImage)
             }
         }
     }
@@ -133,5 +134,22 @@ final class MediaLibraryStore: ObservableObject {
             return .audio
         }
         return .other
+    }
+
+    nonisolated private static func quickLookThumbnail(
+        for url: URL,
+        size: CGSize,
+        completion: @escaping (NSImage?) -> Void
+    ) {
+        let request = QLThumbnailGenerator.Request(
+            fileAt: url,
+            size: size,
+            scale: NSScreen.main?.backingScaleFactor ?? 2,
+            representationTypes: [.thumbnail, .lowQualityThumbnail]
+        )
+
+        QLThumbnailGenerator.shared.generateBestRepresentation(for: request) { thumbnail, _ in
+            completion(thumbnail?.nsImage)
+        }
     }
 }
