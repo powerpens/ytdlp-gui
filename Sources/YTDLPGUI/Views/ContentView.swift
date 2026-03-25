@@ -268,7 +268,10 @@ private struct DownloadComposerCard: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Mode")
                         .font(.headline)
-                    Picker("Mode", selection: $viewModel.selectedDownloadMode) {
+                    Picker("Mode", selection: Binding(
+                        get: { viewModel.selectedDownloadMode },
+                        set: { viewModel.selectDownloadMode($0) }
+                    )) {
                         ForEach(DownloadMode.allCases) { mode in
                             Text(mode.title).tag(mode)
                         }

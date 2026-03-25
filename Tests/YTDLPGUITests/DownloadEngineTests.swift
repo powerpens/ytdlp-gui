@@ -73,4 +73,37 @@ struct DownloadEngineTests {
 
         #expect(failure.category == .unsupported)
     }
+
+    @Test
+    func buildsSpotDLArgumentsForTaggedMusicDownloads() {
+        let request = DownloadRequest(
+            mode: .spotifyMusic,
+            urls: ["https://open.spotify.com/track/abc123"],
+            preset: .bestAudio,
+            destinationPath: "/tmp/music",
+            playlistMode: .wholePlaylist,
+            cookieSource: .none,
+            options: DownloadOptions(extraFlags: "--threads 4"),
+            musicOptions: MusicOptions(
+                embedArtwork: false,
+                writeMetadata: true,
+                preservePlaylistOrder: true,
+                formatPreset: .aacM4A
+            )
+        )
+
+        let arguments = SpotDLDownloadProvider.buildArguments(
+            request: request,
+            ffmpegPath: "/usr/local/bin/ffmpeg"
+        )
+
+        #expect(arguments.contains("download"))
+        #expect(arguments.contains("--ffmpeg"))
+        #expect(arguments.contains("/usr/local/bin/ffmpeg"))
+        #expect(arguments.contains("--format"))
+        #expect(arguments.contains("m4a"))
+        #expect(arguments.contains("--playlist-numbering"))
+        #expect(arguments.contains("--skip-album-art"))
+        #expect(arguments.contains("https://open.spotify.com/track/abc123"))
+    }
 }

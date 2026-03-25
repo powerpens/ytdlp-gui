@@ -88,6 +88,29 @@ final class AppViewModel: ObservableObject {
             .filter { !$0.isEmpty }
     }
 
+    var defaultMusicDestinationPath: String {
+        PreferencesStore.defaultLibraryURL
+            .appendingPathComponent("Music", isDirectory: true)
+            .path
+    }
+
+    func selectDownloadMode(_ mode: DownloadMode) {
+        let previousMode = selectedDownloadMode
+        selectedDownloadMode = mode
+        preferences.preferredDownloadMode = mode
+
+        if mode == .spotifyMusic {
+            let defaultRoot = PreferencesStore.defaultLibraryURL.path
+            if destinationPath == defaultRoot {
+                let musicURL = URL(fileURLWithPath: defaultMusicDestinationPath)
+                try? FileManager.default.createDirectory(at: musicURL, withIntermediateDirectories: true)
+                destinationPath = musicURL.path
+            }
+        } else if previousMode == .spotifyMusic && destinationPath == defaultMusicDestinationPath {
+            destinationPath = PreferencesStore.defaultLibraryURL.path
+        }
+    }
+
     func startDownload() {
         guard toolchainManager.status.isReady(for: selectedDownloadMode) else {
             presentAlert(

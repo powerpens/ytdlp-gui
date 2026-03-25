@@ -26,6 +26,7 @@
 		A0000000000000000000010C /* HistoryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000C /* HistoryStoreTests.swift */; };
 		A0000000000000000000010D /* PreferencesStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000D /* PreferencesStoreTests.swift */; };
 		A0000000000000000000010E /* MediaLibraryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000010 /* MediaLibraryStoreTests.swift */; };
+		A00000000000000000000110 /* ToolchainManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000013 /* ToolchainManagerTests.swift */; };
 		A0000000000000000000010F /* YTDLPGUIUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000011 /* YTDLPGUIUITests.swift */; };
 /* End PBXBuildFile section */
 
@@ -70,6 +71,7 @@
 		A00000000000000000000010 /* MediaLibraryStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaLibraryStoreTests.swift; sourceTree = "<group>"; };
 		A00000000000000000000011 /* YTDLPGUIUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YTDLPGUIUITests.swift; sourceTree = "<group>"; };
 		A00000000000000000000012 /* YTDLPGUIUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = YTDLPGUIUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A00000000000000000000013 /* ToolchainManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolchainManagerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -194,6 +196,7 @@
 				A0000000000000000000000C /* HistoryStoreTests.swift */,
 				A0000000000000000000000D /* PreferencesStoreTests.swift */,
 				A00000000000000000000010 /* MediaLibraryStoreTests.swift */,
+				A00000000000000000000013 /* ToolchainManagerTests.swift */,
 			);
 			path = YTDLPGUITests;
 			sourceTree = "<group>";
@@ -362,6 +365,7 @@
 				A0000000000000000000010C /* HistoryStoreTests.swift in Sources */,
 				A0000000000000000000010D /* PreferencesStoreTests.swift in Sources */,
 				A0000000000000000000010E /* MediaLibraryStoreTests.swift in Sources */,
+				A00000000000000000000110 /* ToolchainManagerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
