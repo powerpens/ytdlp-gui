@@ -923,6 +923,7 @@ struct SettingsView: View {
     @EnvironmentObject private var preferences: PreferencesStore
     @EnvironmentObject private var toolchainManager: ToolchainManager
     @EnvironmentObject private var viewModel: AppViewModel
+    @State private var isShowingSpotDLSetup = false
 
     var body: some View {
         Form {
@@ -942,6 +943,24 @@ struct SettingsView: View {
                         .foregroundStyle(toolchainManager.status.spotDL == nil ? .orange : .primary)
                 }
 
+                if toolchainManager.needsSpotDLManualSetup {
+                    Label("spotDL needs a one-time Terminal install.", systemImage: "terminal")
+                        .foregroundStyle(.secondary)
+
+                    HStack {
+                        Button("Open spotDL Setup") {
+                            isShowingSpotDLSetup = true
+                        }
+
+                        Button("Re-check Tools") {
+                            toolchainManager.refresh()
+                        }
+                    }
+                } else if let spotDLVersion = toolchainManager.status.spotDL?.version {
+                    Label("spotDL is ready: \(spotDLVersion)", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+
                 if toolchainManager.hasMissingMediaTools {
                     Text("This app can install yt-dlp and ffmpeg with Homebrew when they are missing.")
                         .foregroundStyle(.secondary)
@@ -949,35 +968,6 @@ struct SettingsView: View {
                         viewModel.installMissingTools()
                     }
                     .disabled(toolchainManager.isInstalling)
-                }
-
-                if toolchainManager.needsSpotDLManualSetup {
-                    Text("spotDL works best as a manual Terminal install so the app does not have to manage your Python environment.")
-                        .foregroundStyle(.secondary)
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Run in Terminal")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                        Text(toolchainManager.spotDLInstallCommand)
-                            .font(.caption.monospaced())
-                            .textSelection(.enabled)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(10)
-                            .background(Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
-
-                        HStack {
-                            Button("Copy spotDL Command") {
-                                NSPasteboard.general.clearContents()
-                                NSPasteboard.general.setString(toolchainManager.spotDLInstallCommand, forType: .string)
-                                viewModel.infoBanner = "spotDL setup command copied to the clipboard."
-                            }
-
-                            Button("Re-check Tools") {
-                                toolchainManager.refresh()
-                            }
-                        }
-                    }
                 }
 
                 if !toolchainManager.installLog.isEmpty {
@@ -1027,6 +1017,81 @@ struct SettingsView: View {
         .formStyle(.grouped)
         .padding(24)
         .frame(width: 560)
+        .sheet(isPresented: $isShowingSpotDLSetup) {
+            SpotDLSetupSheet(
+                command: toolchainManager.spotDLInstallCommand,
+                onCopied: {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(toolchainManager.spotDLInstallCommand, forType: .string)
+                    viewModel.infoBanner = "spotDL setup command copied to the clipboard."
+                },
+                onRecheck: {
+                    toolchainManager.refresh()
+                    isShowingSpotDLSetup = false
+                }
+            )
+        }
+    }
+}
+
+private struct SpotDLSetupSheet: View {
+    let command: String
+    let onCopied: () -> Void
+    let onRecheck: () -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Text("Set Up Spotify Music Downloads")
+                .font(.title2.weight(.semibold))
+
+            Text("spotDL is installed most reliably from Terminal, so the app will guide you instead of trying to manage your Python environment itself.")
+                .foregroundStyle(.secondary)
+
+            VStack(alignment: .leading, spacing: 10) {
+                setupStep(number: "1", text: "Open Terminal.")
+                setupStep(number: "2", text: "Run this command:")
+
+                Text(command)
+                    .font(.callout.monospaced())
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(14)
+                    .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
+
+                setupStep(number: "3", text: "Come back here and click Re-check Tools.")
+            }
+
+            HStack {
+                Button("Copy Command") {
+                    onCopied()
+                }
+
+                Button("Re-check Tools") {
+                    onRecheck()
+                }
+                .buttonStyle(.borderedProminent)
+
+                Spacer()
+
+                Button("Close") {
+                    dismiss()
+                }
+            }
+        }
+        .padding(24)
+        .frame(width: 520)
+    }
+
+    @ViewBuilder
+    private func setupStep(number: String, text: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Text(number)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 18, alignment: .leading)
+            Text(text)
+        }
     }
 }
 
