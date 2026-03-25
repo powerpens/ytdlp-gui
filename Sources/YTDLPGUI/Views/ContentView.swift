@@ -636,42 +636,77 @@ private struct LibraryListRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(alignment: .top, spacing: 14) {
-                LibraryPreviewImage(item: item, size: CGSize(width: 240, height: 140))
-                    .frame(width: 140, height: 78)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(item.fileName)
-                        .font(.headline)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
-
-                    HStack(spacing: 8) {
-                        Text(item.kind.title)
-                        Text("•")
-                        Text(item.fileExtension)
-                        Text("•")
-                        Text(ByteCountFormatter.string(fromByteCount: item.fileSize, countStyle: .file))
-                    }
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                    if let modifiedAt = item.modifiedAt {
-                        Text(modifiedAt.formatted(date: .abbreviated, time: .shortened))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                Spacer(minLength: 0)
+            ViewThatFits(in: .horizontal) {
+                regularRowLayout
+                compactRowLayout
             }
             .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .background(isSelected ? Color.accentColor.opacity(0.14) : Color(nsColor: .controlBackgroundColor))
             .clipShape(RoundedRectangle(cornerRadius: 14))
+            .contentShape(RoundedRectangle(cornerRadius: 14))
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("library.listRow.\(item.fileName)")
+    }
+
+    private var regularRowLayout: some View {
+        HStack(alignment: .top, spacing: 14) {
+            rowPreview
+            rowText
+            Spacer(minLength: 0)
+        }
+    }
+
+    private var compactRowLayout: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            rowPreview
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            rowText
+        }
+    }
+
+    private var rowPreview: some View {
+        LibraryPreviewImage(item: item, size: CGSize(width: 240, height: 140))
+            .frame(width: 140, height: 78)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    private var rowText: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(item.fileName)
+                .font(.headline)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    Text(item.kind.title)
+                    Text("•")
+                    Text(item.fileExtension)
+                    Text("•")
+                    Text(ByteCountFormatter.string(fromByteCount: item.fileSize, countStyle: .file))
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(item.kind.title) • \(item.fileExtension)")
+                    Text(ByteCountFormatter.string(fromByteCount: item.fileSize, countStyle: .file))
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+
+            if let modifiedAt = item.modifiedAt {
+                Text(modifiedAt.formatted(date: .abbreviated, time: .shortened))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
