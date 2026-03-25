@@ -87,7 +87,7 @@ final class MediaLibraryStore: ObservableObject {
     func loadPreviewImage(
         for item: LibraryMediaItem,
         size: CGSize,
-        completion: @escaping @MainActor (NSImage) -> Void
+        completion: @escaping (NSImage) -> Void
     ) {
         let cacheKey = item.url as NSURL
         if let cached = thumbnailCache.object(forKey: cacheKey) {
@@ -110,16 +110,10 @@ final class MediaLibraryStore: ObservableObject {
         )
 
         QLThumbnailGenerator.shared.generateBestRepresentation(for: request) { [weak self] thumbnail, _ in
-            Task { @MainActor in
+            DispatchQueue.main.async {
                 guard let self else { return }
 
-                let image: NSImage
-                if let thumbnail {
-                    image = thumbnail.nsImage
-                } else {
-                    image = self.icon(for: item)
-                }
-
+                let image = thumbnail?.nsImage ?? self.icon(for: item)
                 self.thumbnailCache.setObject(image, forKey: cacheKey)
                 completion(image)
             }
