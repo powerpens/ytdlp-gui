@@ -17,6 +17,22 @@ enum LibraryMediaKind: String, Codable, CaseIterable {
     }
 }
 
+enum LibraryBrowserLayout: String, CaseIterable, Identifiable {
+    case list
+    case gallery
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .list:
+            "List"
+        case .gallery:
+            "Gallery"
+        }
+    }
+}
+
 struct LibraryMediaItem: Identifiable, Equatable {
     let id: URL
     let url: URL

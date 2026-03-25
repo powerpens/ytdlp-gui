@@ -476,10 +476,16 @@ private struct RecentHistoryCard: View {
 
 private struct LibraryBrowserView: View {
     @EnvironmentObject private var viewModel: AppViewModel
+    @AppStorage("libraryBrowserLayout") private var libraryBrowserLayoutRaw = LibraryBrowserLayout.list.rawValue
 
-    private let columns = [
+    private let galleryColumns = [
         GridItem(.adaptive(minimum: 170, maximum: 220), spacing: 16)
     ]
+
+    private var libraryBrowserLayout: LibraryBrowserLayout {
+        get { LibraryBrowserLayout(rawValue: libraryBrowserLayoutRaw) ?? .list }
+        nonmutating set { libraryBrowserLayoutRaw = newValue.rawValue }
+    }
 
     var body: some View {
         HSplitView {
@@ -493,6 +499,17 @@ private struct LibraryBrowserView: View {
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()
+                        Picker("View", selection: Binding(
+                            get: { libraryBrowserLayout },
+                            set: { libraryBrowserLayout = $0 }
+                        )) {
+                            ForEach(LibraryBrowserLayout.allCases) { layout in
+                                Text(layout.title).tag(layout)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(width: 170)
+
                         Button("Open in Finder") {
                             viewModel.openLibraryFolder()
                         }
@@ -508,22 +525,37 @@ private struct LibraryBrowserView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     } else {
                         ScrollView {
-                            LazyVGrid(columns: columns, spacing: 16) {
-                                ForEach(viewModel.libraryStore.items) { item in
-                                    LibraryItemCard(
-                                        item: item,
-                                        isSelected: viewModel.selectedLibraryItemID == item.id
-                                    ) {
-                                        viewModel.selectedLibraryItemID = item.id
+                            if libraryBrowserLayout == .list {
+                                LazyVStack(spacing: 12) {
+                                    ForEach(viewModel.libraryStore.items) { item in
+                                        LibraryListRow(
+                                            item: item,
+                                            isSelected: viewModel.selectedLibraryItemID == item.id
+                                        ) {
+                                            viewModel.selectedLibraryItemID = item.id
+                                        }
                                     }
                                 }
+                                .padding(.vertical, 4)
+                            } else {
+                                LazyVGrid(columns: galleryColumns, spacing: 16) {
+                                    ForEach(viewModel.libraryStore.items) { item in
+                                        LibraryItemCard(
+                                            item: item,
+                                            isSelected: viewModel.selectedLibraryItemID == item.id
+                                        ) {
+                                            viewModel.selectedLibraryItemID = item.id
+                                        }
+                                    }
+                                }
+                                .padding(.vertical, 4)
                             }
-                            .padding(.vertical, 4)
                         }
                     }
                 }
                 .padding(20)
             }
+            .frame(minWidth: 360, idealWidth: 420)
 
             GroupBox {
                 if let item = viewModel.selectedLibraryItem {
@@ -539,13 +571,57 @@ private struct LibraryBrowserView: View {
                     .padding(20)
                 }
             }
-            .frame(minWidth: 260, idealWidth: 320)
+            .frame(minWidth: 340, idealWidth: 420)
         }
     }
 }
 
+private struct LibraryListRow: View {
+    let item: LibraryMediaItem
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(alignment: .top, spacing: 14) {
+                LibraryPreviewImage(item: item, size: CGSize(width: 240, height: 140))
+                    .frame(width: 140, height: 78)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(item.fileName)
+                        .font(.headline)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+
+                    HStack(spacing: 8) {
+                        Text(item.kind.title)
+                        Text("•")
+                        Text(item.fileExtension)
+                        Text("•")
+                        Text(ByteCountFormatter.string(fromByteCount: item.fileSize, countStyle: .file))
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                    if let modifiedAt = item.modifiedAt {
+                        Text(modifiedAt.formatted(date: .abbreviated, time: .shortened))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(12)
+            .background(isSelected ? Color.accentColor.opacity(0.14) : Color(nsColor: .controlBackgroundColor))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 private struct LibraryItemCard: View {
-    @EnvironmentObject private var viewModel: AppViewModel
     let item: LibraryMediaItem
     let isSelected: Bool
     let action: () -> Void
@@ -554,13 +630,16 @@ private struct LibraryItemCard: View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 10) {
                 LibraryPreviewImage(item: item, size: CGSize(width: 220, height: 140))
-                    .frame(height: 98)
+                    .frame(height: 128)
                     .frame(maxWidth: .infinity)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 Text(item.fileName)
                     .font(.headline)
                     .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(height: 46, alignment: .topLeading)
 
                 HStack {
                     Text(item.kind.title)
@@ -571,7 +650,7 @@ private struct LibraryItemCard: View {
                 .foregroundStyle(.secondary)
             }
             .padding(14)
-            .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
+            .frame(maxWidth: .infinity, minHeight: 220, alignment: .topLeading)
             .background(isSelected ? Color.accentColor.opacity(0.14) : Color(nsColor: .controlBackgroundColor))
             .clipShape(RoundedRectangle(cornerRadius: 16))
         }
