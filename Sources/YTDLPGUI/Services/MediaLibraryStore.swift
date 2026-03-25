@@ -1,6 +1,6 @@
 import AppKit
-import AVFoundation
 import Foundation
+@preconcurrency import AVFoundation
 @preconcurrency import QuickLookThumbnailing
 
 @MainActor
@@ -15,6 +15,7 @@ final class MediaLibraryStore: ObservableObject {
     private let thumbnailCache = NSCache<NSURL, NSImage>()
     private let artworkCache = NSCache<NSURL, NSImage>()
     private let thumbnailProvider: ThumbnailProvider
+    private var metadataRefreshID = UUID()
 
     init(
         rootFolderURL: URL,
@@ -38,6 +39,7 @@ final class MediaLibraryStore: ObservableObject {
         ensureRootFolderExists()
         thumbnailCache.removeAllObjects()
         artworkCache.removeAllObjects()
+        metadataRefreshID = UUID()
 
         let resourceKeys: Set<URLResourceKey> = [
             .isRegularFileKey,
@@ -61,11 +63,6 @@ final class MediaLibraryStore: ObservableObject {
             }
 
             let kind = Self.kind(for: url.pathExtension)
-            let extractedMetadata = Self.extractMetadata(for: url, kind: kind)
-            if let artworkImage = extractedMetadata.artwork {
-                artworkCache.setObject(artworkImage, forKey: url as NSURL)
-            }
-
             return LibraryMediaItem(
                 id: url,
                 url: url,
@@ -73,7 +70,7 @@ final class MediaLibraryStore: ObservableObject {
                 kind: kind,
                 fileSize: Int64(values.fileSize ?? 0),
                 modifiedAt: values.contentModificationDate,
-                metadata: extractedMetadata.metadata
+                metadata: LibraryMediaMetadata()
             )
         }
         .sorted { lhs, rhs in
@@ -86,6 +83,19 @@ final class MediaLibraryStore: ObservableObject {
         }
 
         lastRefreshAt = Date()
+        let refreshID = metadataRefreshID
+        let snapshot = items
+        Task(priority: .utility) { [weak self] in
+            let enrichedItems = await Self.enrichedItems(from: snapshot)
+
+            guard let self, self.metadataRefreshID == refreshID else { return }
+            for item in enrichedItems {
+                if let artworkImage = item.artwork {
+                    self.artworkCache.setObject(artworkImage, forKey: item.item.url as NSURL)
+                }
+            }
+            self.items = enrichedItems.map(\.item)
+        }
     }
 
     func open(_ item: LibraryMediaItem) {
@@ -152,19 +162,43 @@ final class MediaLibraryStore: ObservableObject {
         return .other
     }
 
-    private static func extractMetadata(for url: URL, kind: LibraryMediaKind) -> (metadata: LibraryMediaMetadata, artwork: NSImage?) {
+    private static func enrichedItems(from items: [LibraryMediaItem]) async -> [(item: LibraryMediaItem, artwork: NSImage?)] {
+        var enriched: [(item: LibraryMediaItem, artwork: NSImage?)] = []
+        enriched.reserveCapacity(items.count)
+
+        for item in items {
+            let extracted = await extractMetadata(for: item.url, kind: item.kind)
+            enriched.append((
+                item: LibraryMediaItem(
+                    id: item.id,
+                    url: item.url,
+                    fileName: item.fileName,
+                    kind: item.kind,
+                    fileSize: item.fileSize,
+                    modifiedAt: item.modifiedAt,
+                    metadata: extracted.metadata
+                ),
+                artwork: extracted.artwork
+            ))
+        }
+
+        return enriched
+    }
+
+    private static func extractMetadata(for url: URL, kind: LibraryMediaKind) async -> (metadata: LibraryMediaMetadata, artwork: NSImage?) {
         guard kind == .audio || kind == .video else {
             return (LibraryMediaMetadata(), nil)
         }
 
         let asset = AVURLAsset(url: url)
-        let metadata = asset.commonMetadata
+        let metadataItems = (try? await asset.load(.commonMetadata)) ?? []
+        let durationTime = try? await asset.load(.duration)
 
-        let title = stringValue(forCommonKey: .commonKeyTitle, in: metadata)
-        let artist = stringValue(forCommonKey: .commonKeyArtist, in: metadata)
-        let album = stringValue(forCommonKey: .commonKeyAlbumName, in: metadata)
-        let duration = asset.duration.seconds.isFinite && asset.duration.seconds > 0 ? asset.duration.seconds : nil
-        let artwork = artworkImage(from: metadata)
+        let title = await stringValue(forCommonKey: .commonKeyTitle, in: metadataItems)
+        let artist = await stringValue(forCommonKey: .commonKeyArtist, in: metadataItems)
+        let album = await stringValue(forCommonKey: .commonKeyAlbumName, in: metadataItems)
+        let duration = durationTime?.seconds.isFinite == true && (durationTime?.seconds ?? 0) > 0 ? durationTime?.seconds : nil
+        let artwork = await artworkImage(from: metadataItems)
 
         return (
             LibraryMediaMetadata(
@@ -177,13 +211,16 @@ final class MediaLibraryStore: ObservableObject {
         )
     }
 
-    private static func stringValue(forCommonKey key: AVMetadataKey, in items: [AVMetadataItem]) -> String? {
-        items.first(where: { $0.commonKey == key })?.stringValue
+    private static func stringValue(forCommonKey key: AVMetadataKey, in items: [AVMetadataItem]) async -> String? {
+        guard let item = items.first(where: { $0.commonKey == key }) else {
+            return nil
+        }
+        return try? await item.load(.stringValue)
     }
 
-    private static func artworkImage(from items: [AVMetadataItem]) -> NSImage? {
+    private static func artworkImage(from items: [AVMetadataItem]) async -> NSImage? {
         for item in items where item.commonKey == .commonKeyArtwork {
-            if let data = item.dataValue, let image = NSImage(data: data) {
+            if let data = try? await item.load(.dataValue), let image = NSImage(data: data) {
                 return image
             }
         }
