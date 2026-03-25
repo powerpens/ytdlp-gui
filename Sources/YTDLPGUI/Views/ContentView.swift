@@ -634,6 +634,7 @@ private struct LibraryPreviewImage: View {
                 Image(nsImage: previewImage)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
+                    .clipped()
             } else {
                 Image(nsImage: viewModel.libraryStore.icon(for: item))
                     .resizable()
@@ -643,7 +644,10 @@ private struct LibraryPreviewImage: View {
             }
         }
         .task(id: item.id) {
-            previewImage = await viewModel.libraryStore.previewImage(for: item, size: size)
+            previewImage = nil
+            viewModel.libraryStore.loadPreviewImage(for: item, size: size) { image in
+                previewImage = image
+            }
         }
     }
 }

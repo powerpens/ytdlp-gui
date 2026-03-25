@@ -1,6 +1,6 @@
 import AppKit
-import AVFoundation
 import Foundation
+@preconcurrency import QuickLookThumbnailing
 
 @MainActor
 final class MediaLibraryStore: ObservableObject {
@@ -26,6 +26,7 @@ final class MediaLibraryStore: ObservableObject {
 
     func refresh() {
         ensureRootFolderExists()
+        thumbnailCache.removeAllObjects()
 
         let resourceKeys: Set<URLResourceKey> = [
             .isRegularFileKey,
@@ -83,26 +84,46 @@ final class MediaLibraryStore: ObservableObject {
         return icon
     }
 
-    func previewImage(for item: LibraryMediaItem, size: CGSize) async -> NSImage {
+    func loadPreviewImage(
+        for item: LibraryMediaItem,
+        size: CGSize,
+        completion: @escaping @MainActor (NSImage) -> Void
+    ) {
         let cacheKey = item.url as NSURL
         if let cached = thumbnailCache.object(forKey: cacheKey) {
-            return cached
+            completion(cached)
+            return
         }
 
         guard item.kind == .video else {
             let fallback = icon(for: item)
             thumbnailCache.setObject(fallback, forKey: cacheKey)
-            return fallback
+            completion(fallback)
+            return
         }
 
-        if let image = Self.generateVideoThumbnail(for: item.url, size: size) {
-            thumbnailCache.setObject(image, forKey: cacheKey)
-            return image
-        }
+        let request = QLThumbnailGenerator.Request(
+            fileAt: item.url,
+            size: size,
+            scale: NSScreen.main?.backingScaleFactor ?? 2,
+            representationTypes: [.thumbnail, .lowQualityThumbnail]
+        )
 
-        let fallback = icon(for: item)
-        thumbnailCache.setObject(fallback, forKey: cacheKey)
-        return fallback
+        QLThumbnailGenerator.shared.generateBestRepresentation(for: request) { [weak self] thumbnail, _ in
+            Task { @MainActor in
+                guard let self else { return }
+
+                let image: NSImage
+                if let thumbnail {
+                    image = thumbnail.nsImage
+                } else {
+                    image = self.icon(for: item)
+                }
+
+                self.thumbnailCache.setObject(image, forKey: cacheKey)
+                completion(image)
+            }
+        }
     }
 
     private func ensureRootFolderExists() {
@@ -118,19 +139,5 @@ final class MediaLibraryStore: ObservableObject {
             return .audio
         }
         return .other
-    }
-
-    private static func generateVideoThumbnail(for url: URL, size: CGSize) -> NSImage? {
-        let asset = AVURLAsset(url: url)
-        let generator = AVAssetImageGenerator(asset: asset)
-        generator.appliesPreferredTrackTransform = true
-        generator.maximumSize = size
-
-        do {
-            let cgImage = try generator.copyCGImage(at: .zero, actualTime: nil)
-            return NSImage(cgImage: cgImage, size: .zero)
-        } catch {
-            return nil
-        }
     }
 }
