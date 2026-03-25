@@ -17,4 +17,14 @@ struct PreferencesStoreTests {
         #expect(store.defaultDestinationPath == "/tmp/downloads")
         #expect(store.concurrencyLimit == 3)
     }
+
+    @Test
+    func usesMoviesLibraryFolderByDefault() {
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        defaults.removeObject(forKey: "defaultDestinationPath")
+
+        let store = PreferencesStore(defaults: defaults)
+
+        #expect(store.defaultDestinationPath.hasSuffix("/Movies/ytdlp-gui"))
+    }
 }

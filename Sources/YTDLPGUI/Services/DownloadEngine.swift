@@ -51,6 +51,24 @@ private final class StreamAccumulator: @unchecked Sendable {
     }
 }
 
+private final class ProcessOutputContext: @unchecked Sendable {
+    private let lock = NSLock()
+    private var recentLines: [String] = []
+
+    func record(_ line: String) {
+        lock.lock()
+        recentLines.append(line)
+        recentLines = Array(recentLines.suffix(30))
+        lock.unlock()
+    }
+
+    func snapshot() -> [String] {
+        lock.lock()
+        defer { lock.unlock() }
+        return recentLines
+    }
+}
+
 final class DownloadEngine: @unchecked Sendable {
     private var processes: [UUID: Process] = [:]
     private var cancelledJobs = Set<UUID>()
@@ -83,12 +101,14 @@ final class DownloadEngine: @unchecked Sendable {
         process.standardError = combinedPipe
 
         let accumulator = StreamAccumulator()
+        let outputContext = ProcessOutputContext()
         combinedPipe.fileHandleForReading.readabilityHandler = { handle in
             let data = handle.availableData
             guard !data.isEmpty else { return }
 
             let lines = accumulator.append(data)
             for line in lines {
+                outputContext.record(line)
                 onEvent(.rawOutput(line))
                 if let progress = Self.parseProgressLine(line) {
                     onEvent(.progress(progress))
@@ -114,8 +134,12 @@ final class DownloadEngine: @unchecked Sendable {
             } else if terminatedProcess.terminationStatus == 0 {
                 onEvent(.state(.completed, message: "Completed"))
             } else {
-                let category = Self.inferFailureCategory(from: terminatedProcess.terminationReason)
-                onEvent(.state(.failed(category), message: "yt-dlp exited with status \(terminatedProcess.terminationStatus)"))
+                let failure = Self.inferFailure(
+                    from: outputContext.snapshot(),
+                    terminationStatus: Int(terminatedProcess.terminationStatus),
+                    reason: terminatedProcess.terminationReason
+                )
+                onEvent(.state(.failed(failure), message: failure.summary))
             }
         }
 
@@ -237,14 +261,112 @@ final class DownloadEngine: @unchecked Sendable {
         return nil
     }
 
-    private static func inferFailureCategory(from reason: Process.TerminationReason) -> DownloadFailureCategory {
-        switch reason {
-        case .uncaughtSignal:
-            .userCancelled
-        case .exit:
-            .process
-        @unknown default:
-            .process
+    static func inferFailure(
+        from recentLines: [String],
+        terminationStatus: Int,
+        reason: Process.TerminationReason
+    ) -> DownloadFailure {
+        if reason == .uncaughtSignal {
+            return DownloadFailure(
+                category: .userCancelled,
+                summary: "The download was cancelled before it finished.",
+                recoverySuggestion: "Start the download again when you're ready.",
+                technicalDetails: "The yt-dlp process was interrupted by a signal."
+            )
         }
+
+        let likelyErrorLine = recentLines.reversed().first(where: { line in
+            let lowered = line.lowercased()
+            return lowered.contains("error:") || lowered.contains("permission denied") || lowered.contains("unsupported url")
+        }) ?? recentLines.last ?? "yt-dlp exited with status \(terminationStatus)"
+        let cleanedLine = cleanTechnicalLine(likelyErrorLine)
+        let normalized = cleanedLine.lowercased()
+
+        if normalized.contains("unsupported url") || normalized.contains("no suitable extractor") {
+            return DownloadFailure(
+                category: .unsupported,
+                summary: "This URL or site is not supported by the current yt-dlp setup.",
+                recoverySuggestion: "Double-check the link. If it looks right, try updating yt-dlp in Settings and retry.",
+                technicalDetails: cleanedLine
+            )
+        }
+
+        if normalized.contains("login required")
+            || normalized.contains("sign in")
+            || normalized.contains("cookies")
+            || normalized.contains("private")
+            || normalized.contains("members only")
+            || normalized.contains("authentication")
+        {
+            return DownloadFailure(
+                category: .authentication,
+                summary: "This download likely needs authentication or fresher cookies.",
+                recoverySuggestion: "Open Advanced Options and choose a browser cookie source or import a cookie file, then retry.",
+                technicalDetails: cleanedLine
+            )
+        }
+
+        if normalized.contains("timed out")
+            || normalized.contains("connection")
+            || normalized.contains("network is unreachable")
+            || normalized.contains("temporary failure")
+            || normalized.contains("unable to download")
+        {
+            return DownloadFailure(
+                category: .network,
+                summary: "The download failed while talking to the source site.",
+                recoverySuggestion: "Check your connection, wait a moment, and try again.",
+                technicalDetails: cleanedLine
+            )
+        }
+
+        if normalized.contains("permission denied")
+            || normalized.contains("read-only file system")
+            || normalized.contains("operation not permitted")
+            || normalized.contains("no space left")
+            || normalized.contains("cannot write")
+        {
+            return DownloadFailure(
+                category: .filesystem,
+                summary: "The app couldn't write files to the selected folder.",
+                recoverySuggestion: "Choose a different destination folder or fix the folder permissions, then retry.",
+                technicalDetails: cleanedLine
+            )
+        }
+
+        if normalized.contains("ffmpeg not found")
+            || normalized.contains("ffprobe not found")
+            || normalized.contains("yt-dlp not found")
+        {
+            return DownloadFailure(
+                category: .missingTools,
+                summary: "A required download tool is missing or unavailable.",
+                recoverySuggestion: "Open Settings and install or repair yt-dlp and ffmpeg, then retry.",
+                technicalDetails: cleanedLine
+            )
+        }
+
+        if normalized.contains("requested format is not available") {
+            return DownloadFailure(
+                category: .process,
+                summary: "The selected format isn't available for this video.",
+                recoverySuggestion: "Clear the format override or switch to a broader preset like Best Video, then retry.",
+                technicalDetails: cleanedLine
+            )
+        }
+
+        return DownloadFailure(
+            category: .process,
+            summary: "yt-dlp couldn't finish this download.",
+            recoverySuggestion: "Review the details, adjust the options if needed, and try again.",
+            technicalDetails: cleanedLine.isEmpty ? "yt-dlp exited with status \(terminationStatus)." : cleanedLine
+        )
+    }
+
+    private static func cleanTechnicalLine(_ line: String) -> String {
+        line
+            .replacingOccurrences(of: "ERROR: ", with: "")
+            .replacingOccurrences(of: "error: ", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

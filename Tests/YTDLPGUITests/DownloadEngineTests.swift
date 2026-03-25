@@ -50,4 +50,27 @@ struct DownloadEngineTests {
         #expect(DownloadEngine.parseDestinationLine(#"[Merger] Merging formats into "/tmp/video.mp4""#) == "/tmp/video.mp4")
         #expect(DownloadEngine.parseDestinationLine("[download] Destination: /tmp/audio.webm") == "/tmp/audio.webm")
     }
+
+    @Test
+    func classifiesAuthenticationFailure() {
+        let failure = DownloadEngine.inferFailure(
+            from: ["ERROR: Sign in to confirm your age"],
+            terminationStatus: 1,
+            reason: .exit
+        )
+
+        #expect(failure.category == .authentication)
+        #expect(failure.summary.contains("authentication"))
+    }
+
+    @Test
+    func classifiesUnsupportedFailure() {
+        let failure = DownloadEngine.inferFailure(
+            from: ["ERROR: Unsupported URL: https://example.com/post/123"],
+            terminationStatus: 1,
+            reason: .exit
+        )
+
+        #expect(failure.category == .unsupported)
+    }
 }

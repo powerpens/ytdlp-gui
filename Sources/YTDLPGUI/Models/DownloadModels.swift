@@ -90,11 +90,18 @@ enum DownloadFailureCategory: String, Codable, CaseIterable {
     case process
 }
 
+struct DownloadFailure: Codable, Equatable {
+    var category: DownloadFailureCategory
+    var summary: String
+    var recoverySuggestion: String
+    var technicalDetails: String
+}
+
 enum DownloadJobState: Codable, Equatable {
     case queued
     case running
     case completed
-    case failed(DownloadFailureCategory)
+    case failed(DownloadFailure)
     case cancelled
 
     var isTerminal: Bool {
@@ -158,4 +165,31 @@ struct DownloadJob: Identifiable, Codable, Equatable {
             lastOutputLine: nil
         )
     }
+}
+
+extension DownloadFailureCategory {
+    var displayTitle: String {
+        switch self {
+        case .missingTools:
+            "Missing Tools"
+        case .authentication:
+            "Authentication Required"
+        case .network:
+            "Connection Problem"
+        case .filesystem:
+            "File Access Problem"
+        case .unsupported:
+            "Unsupported URL"
+        case .userCancelled:
+            "Cancelled"
+        case .process:
+            "Download Error"
+        }
+    }
+}
+
+struct AlertInfo: Identifiable, Equatable {
+    let id = UUID()
+    let title: String
+    let message: String
 }

@@ -20,10 +20,17 @@ final class PreferencesStore: ObservableObject {
         static let concurrencyLimit = "concurrencyLimit"
     }
 
+    static var defaultLibraryURL: URL {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Movies", isDirectory: true)
+            .appendingPathComponent("ytdlp-gui", isDirectory: true)
+    }
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        try? FileManager.default.createDirectory(at: Self.defaultLibraryURL, withIntermediateDirectories: true)
         preferredPreset = MediaPreset(rawValue: defaults.string(forKey: Keys.preferredPreset) ?? "") ?? .bestVideo
-        defaultDestinationPath = defaults.string(forKey: Keys.defaultDestinationPath) ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Downloads").path
+        defaultDestinationPath = defaults.string(forKey: Keys.defaultDestinationPath) ?? Self.defaultLibraryURL.path
         let storedLimit = defaults.integer(forKey: Keys.concurrencyLimit)
         concurrencyLimit = storedLimit > 0 ? storedLimit : 2
     }

@@ -1,0 +1,485 @@
+// !$*UTF8*$!
+{
+	objectVersion = 77;
+	archiveVersion = 1;
+	classes = {
+	};
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A00000000000000000000101 /* YTDLPGUIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000001 /* YTDLPGUIApp.swift */; };
+		A00000000000000000000102 /* DownloadModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000002 /* DownloadModels.swift */; };
+		A00000000000000000000102A /* LibraryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000002A /* LibraryModels.swift */; };
+		A00000000000000000000103 /* CookieManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000003 /* CookieManager.swift */; };
+		A00000000000000000000104 /* DownloadEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000004 /* DownloadEngine.swift */; };
+		A00000000000000000000105 /* HistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000005 /* HistoryStore.swift */; };
+		A00000000000000000000105A /* MediaLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000005A /* MediaLibraryStore.swift */; };
+		A00000000000000000000106 /* PreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000006 /* PreferencesStore.swift */; };
+		A00000000000000000000107 /* ProcessRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000007 /* ProcessRunner.swift */; };
+		A00000000000000000000108 /* ToolchainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000008 /* ToolchainManager.swift */; };
+		A00000000000000000000109 /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000009 /* AppViewModel.swift */; };
+		A0000000000000000000010A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000A /* ContentView.swift */; };
+		A0000000000000000000010B /* DownloadEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000B /* DownloadEngineTests.swift */; };
+		A0000000000000000000010C /* HistoryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000C /* HistoryStoreTests.swift */; };
+		A0000000000000000000010D /* PreferencesStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000D /* PreferencesStoreTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A00000000000000000000201 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A00000000000000000000300 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A00000000000000000000400;
+			remoteInfo = YTDLPGUI;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		A00000000000000000000001 /* YTDLPGUIApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YTDLPGUIApp.swift; sourceTree = "<group>"; };
+		A00000000000000000000002 /* DownloadModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadModels.swift; sourceTree = "<group>"; };
+		A00000000000000000000002A /* LibraryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryModels.swift; sourceTree = "<group>"; };
+		A00000000000000000000003 /* CookieManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CookieManager.swift; sourceTree = "<group>"; };
+		A00000000000000000000004 /* DownloadEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadEngine.swift; sourceTree = "<group>"; };
+		A00000000000000000000005 /* HistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryStore.swift; sourceTree = "<group>"; };
+		A00000000000000000000005A /* MediaLibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaLibraryStore.swift; sourceTree = "<group>"; };
+		A00000000000000000000006 /* PreferencesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesStore.swift; sourceTree = "<group>"; };
+		A00000000000000000000007 /* ProcessRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessRunner.swift; sourceTree = "<group>"; };
+		A00000000000000000000008 /* ToolchainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolchainManager.swift; sourceTree = "<group>"; };
+		A00000000000000000000009 /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
+		A0000000000000000000000A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A0000000000000000000000B /* DownloadEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadEngineTests.swift; sourceTree = "<group>"; };
+		A0000000000000000000000C /* HistoryStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryStoreTests.swift; sourceTree = "<group>"; };
+		A0000000000000000000000D /* PreferencesStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesStoreTests.swift; sourceTree = "<group>"; };
+		A0000000000000000000000E /* YTDLPGUI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = YTDLPGUI.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A0000000000000000000000F /* YTDLPGUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = YTDLPGUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A00000000000000000000500 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A00000000000000000000501 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A00000000000000000000600 = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000601 /* Sources */,
+				A00000000000000000000602 /* Tests */,
+				A00000000000000000000603 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A00000000000000000000601 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000604 /* YTDLPGUI */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000602 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000609 /* YTDLPGUITests */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000603 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000000E /* YTDLPGUI.app */,
+				A0000000000000000000000F /* YTDLPGUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000604 /* YTDLPGUI */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000001 /* YTDLPGUIApp.swift */,
+				A00000000000000000000605 /* Models */,
+				A00000000000000000000606 /* Services */,
+				A00000000000000000000607 /* ViewModels */,
+				A00000000000000000000608 /* Views */,
+			);
+			path = YTDLPGUI;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000605 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000002 /* DownloadModels.swift */,
+				A00000000000000000000002A /* LibraryModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000606 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000003 /* CookieManager.swift */,
+				A00000000000000000000004 /* DownloadEngine.swift */,
+				A00000000000000000000005 /* HistoryStore.swift */,
+				A00000000000000000000005A /* MediaLibraryStore.swift */,
+				A00000000000000000000006 /* PreferencesStore.swift */,
+				A00000000000000000000007 /* ProcessRunner.swift */,
+				A00000000000000000000008 /* ToolchainManager.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000607 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000009 /* AppViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000608 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000000A /* ContentView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000609 /* YTDLPGUITests */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000000B /* DownloadEngineTests.swift */,
+				A0000000000000000000000C /* HistoryStoreTests.swift */,
+				A0000000000000000000000D /* PreferencesStoreTests.swift */,
+			);
+			path = YTDLPGUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A00000000000000000000400 /* YTDLPGUI */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A00000000000000000000700 /* Build configuration list for PBXNativeTarget "YTDLPGUI" */;
+			buildPhases = (
+				A00000000000000000000502 /* Sources */,
+				A00000000000000000000500 /* Frameworks */,
+				A00000000000000000000503 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = YTDLPGUI;
+			productName = YTDLPGUI;
+			productReference = A0000000000000000000000E /* YTDLPGUI.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A00000000000000000000401 /* YTDLPGUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A00000000000000000000701 /* Build configuration list for PBXNativeTarget "YTDLPGUITests" */;
+			buildPhases = (
+				A00000000000000000000504 /* Sources */,
+				A00000000000000000000501 /* Frameworks */,
+				A00000000000000000000505 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A00000000000000000000800 /* PBXTargetDependency */,
+			);
+			name = YTDLPGUITests;
+			productName = YTDLPGUITests;
+			productReference = A0000000000000000000000F /* YTDLPGUITests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A00000000000000000000300 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1640;
+				LastUpgradeCheck = 1640;
+				TargetAttributes = {
+					A00000000000000000000400 = {
+						CreatedOnToolsVersion = 16.4;
+					};
+					A00000000000000000000401 = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = A00000000000000000000400;
+					};
+				};
+			};
+			buildConfigurationList = A00000000000000000000702 /* Build configuration list for PBXProject "YTDLPGUI" */;
+			compatibilityVersion = "Xcode 16.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A00000000000000000000600;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = A00000000000000000000603 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A00000000000000000000400 /* YTDLPGUI */,
+				A00000000000000000000401 /* YTDLPGUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A00000000000000000000503 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A00000000000000000000505 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A00000000000000000000502 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A00000000000000000000101 /* YTDLPGUIApp.swift in Sources */,
+				A00000000000000000000102 /* DownloadModels.swift in Sources */,
+				A00000000000000000000102A /* LibraryModels.swift in Sources */,
+				A00000000000000000000103 /* CookieManager.swift in Sources */,
+				A00000000000000000000104 /* DownloadEngine.swift in Sources */,
+				A00000000000000000000105 /* HistoryStore.swift in Sources */,
+				A00000000000000000000105A /* MediaLibraryStore.swift in Sources */,
+				A00000000000000000000106 /* PreferencesStore.swift in Sources */,
+				A00000000000000000000107 /* ProcessRunner.swift in Sources */,
+				A00000000000000000000108 /* ToolchainManager.swift in Sources */,
+				A00000000000000000000109 /* AppViewModel.swift in Sources */,
+				A0000000000000000000010A /* ContentView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A00000000000000000000504 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A0000000000000000000010B /* DownloadEngineTests.swift in Sources */,
+				A0000000000000000000010C /* HistoryStoreTests.swift in Sources */,
+				A0000000000000000000010D /* PreferencesStoreTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A00000000000000000000800 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A00000000000000000000400 /* YTDLPGUI */;
+			targetProxy = A00000000000000000000201 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		A00000000000000000000900 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		A00000000000000000000901 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		A00000000000000000000902 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_PREVIEWS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "yt-dlp GUI";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.silashowe.YTDLPGUI;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		A00000000000000000000903 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "yt-dlp GUI";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.silashowe.YTDLPGUI;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		A00000000000000000000904 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/YTDLPGUI.app/Contents/MacOS/YTDLPGUI";
+				CODE_SIGNING_ALLOWED = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_TESTABILITY = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@loader_path/../Frameworks",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.silashowe.YTDLPGUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUNDLE_LOADER)";
+				TEST_TARGET_NAME = YTDLPGUI;
+			};
+			name = Debug;
+		};
+		A00000000000000000000905 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/YTDLPGUI.app/Contents/MacOS/YTDLPGUI";
+				CODE_SIGNING_ALLOWED = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@loader_path/../Frameworks",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.silashowe.YTDLPGUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUNDLE_LOADER)";
+				TEST_TARGET_NAME = YTDLPGUI;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A00000000000000000000700 /* Build configuration list for PBXNativeTarget "YTDLPGUI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A00000000000000000000902 /* Debug */,
+				A00000000000000000000903 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A00000000000000000000701 /* Build configuration list for PBXNativeTarget "YTDLPGUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A00000000000000000000904 /* Debug */,
+				A00000000000000000000905 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A00000000000000000000702 /* Build configuration list for PBXProject "YTDLPGUI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A00000000000000000000900 /* Debug */,
+				A00000000000000000000901 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A00000000000000000000300 /* Project object */;
+}

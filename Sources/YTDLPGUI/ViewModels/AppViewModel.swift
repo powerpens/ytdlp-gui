@@ -3,6 +3,23 @@ import Foundation
 
 @MainActor
 final class AppViewModel: ObservableObject {
+    enum WorkspaceSection: String, CaseIterable, Identifiable {
+        case downloads
+        case library
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .downloads:
+                "Downloads"
+            case .library:
+                "Library"
+            }
+        }
+    }
+
+    @Published var selectedSection: WorkspaceSection = .downloads
     @Published var urlText = ""
     @Published var selectedPreset: MediaPreset
     @Published var destinationPath: String
@@ -15,13 +32,15 @@ final class AppViewModel: ObservableObject {
     @Published var isAdvancedExpanded = false
     @Published var activeJobs: [DownloadJob] = []
     @Published var recentJobs: [DownloadJob] = []
-    @Published var errorMessage: String?
+    @Published var activeAlert: AlertInfo?
     @Published var infoBanner: String?
+    @Published var selectedLibraryItemID: URL?
 
     private let preferences: PreferencesStore
     private let toolchainManager: ToolchainManager
     private let cookieManager: CookieManager
     private let historyStore: HistoryStore
+    let libraryStore: MediaLibraryStore
     private let downloadEngine = DownloadEngine()
 
     init(
@@ -34,6 +53,7 @@ final class AppViewModel: ObservableObject {
         self.toolchainManager = toolchainManager
         self.cookieManager = cookieManager
         self.historyStore = historyStore
+        libraryStore = MediaLibraryStore(rootFolderURL: URL(fileURLWithPath: preferences.defaultDestinationPath))
         selectedPreset = preferences.preferredPreset
         destinationPath = preferences.defaultDestinationPath
         recentJobs = historyStore.load()
@@ -55,7 +75,10 @@ final class AppViewModel: ObservableObject {
               let ytDLPPath = toolchainManager.status.ytDLP?.path,
               let ffmpegPath = toolchainManager.status.ffmpeg?.path
         else {
-            errorMessage = "yt-dlp and ffmpeg must both be available before starting a download."
+            presentAlert(
+                title: "Download Tools Missing",
+                message: "yt-dlp and ffmpeg both need to be available before a download can start.\n\nOpen Settings to install or inspect the toolchain."
+            )
             return
         }
 
@@ -75,19 +98,25 @@ final class AppViewModel: ObservableObject {
         )
 
         guard cookieManager.validate(source: request.cookieSource) else {
-            errorMessage = "The selected cookie file is missing or unreadable."
+            presentAlert(
+                title: "Cookie File Unavailable",
+                message: "The selected cookie file is missing or unreadable.\n\nChoose another file in Advanced Options and try again."
+            )
             return
         }
 
         guard activeJobs.count < preferences.concurrencyLimit else {
-            errorMessage = "The concurrency limit is \(preferences.concurrencyLimit). Wait for an active download to finish or raise the limit in Settings."
+            presentAlert(
+                title: "Queue Limit Reached",
+                message: "The concurrency limit is \(preferences.concurrencyLimit).\n\nWait for an active download to finish or raise the limit in Settings."
+            )
             return
         }
 
         let job = DownloadJob.queued(from: request)
         activeJobs.insert(job, at: 0)
         infoBanner = nil
-        errorMessage = nil
+        activeAlert = nil
 
         do {
             try downloadEngine.start(
@@ -104,7 +133,7 @@ final class AppViewModel: ObservableObject {
             preferences.defaultDestinationPath = destinationPath
         } catch {
             activeJobs.removeAll { $0.id == job.id }
-            errorMessage = error.localizedDescription
+            presentAlert(title: "Couldn't Start Download", message: error.localizedDescription)
         }
     }
 
@@ -147,6 +176,7 @@ final class AppViewModel: ObservableObject {
 
         destinationPath = url.path
         preferences.defaultDestinationPath = url.path
+        libraryStore.updateRootFolder(to: url)
     }
 
     func installMissingTools() {
@@ -155,7 +185,7 @@ final class AppViewModel: ObservableObject {
                 try await toolchainManager.installMissingTools()
                 infoBanner = "Toolchain installation completed."
             } catch {
-                errorMessage = error.localizedDescription
+                presentAlert(title: "Toolchain Installation Failed", message: error.localizedDescription)
             }
         }
     }
@@ -169,6 +199,21 @@ final class AppViewModel: ObservableObject {
         }
     }
 
+    func pasteFromClipboard() {
+        guard let text = NSPasteboard.general.string(forType: .string)?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+            !text.isEmpty
+        else {
+            presentAlert(
+                title: "Nothing to Paste",
+                message: "The clipboard does not contain any text right now."
+            )
+            return
+        }
+
+        acceptDroppedText(text)
+    }
+
     private func handle(_ event: DownloadEvent, for jobID: UUID) {
         guard let index = activeJobs.firstIndex(where: { $0.id == jobID }) else {
             return
@@ -180,6 +225,14 @@ final class AppViewModel: ObservableObject {
         case let .state(state, message):
             activeJobs[index].state = state
             activeJobs[index].detailMessage = message
+            if case let .failed(failure) = state {
+                activeJobs[index].detailMessage = failure.summary
+                activeJobs[index].lastOutputLine = failure.technicalDetails
+                presentAlert(
+                    title: failure.category.displayTitle,
+                    message: "\(failure.summary)\n\n\(failure.recoverySuggestion)\n\nDetails: \(failure.technicalDetails)"
+                )
+            }
             if state.isTerminal {
                 finish(jobAt: index)
             }
@@ -205,12 +258,38 @@ final class AppViewModel: ObservableObject {
         let finishedJob = activeJobs.remove(at: index)
         recentJobs.insert(finishedJob, at: 0)
         recentJobs = Array(recentJobs.prefix(20))
+        libraryStore.refresh()
 
         do {
             try historyStore.save(recentJobs)
         } catch {
-            errorMessage = "Unable to save history: \(error.localizedDescription)"
+            presentAlert(title: "History Save Failed", message: "Unable to save recent history.\n\n\(error.localizedDescription)")
         }
+    }
+
+    private func presentAlert(title: String, message: String) {
+        activeAlert = AlertInfo(title: title, message: message)
+    }
+
+    var selectedLibraryItem: LibraryMediaItem? {
+        guard let selectedLibraryItemID else { return nil }
+        return libraryStore.items.first(where: { $0.id == selectedLibraryItemID })
+    }
+
+    func openLibraryFolder() {
+        NSWorkspace.shared.open(libraryStore.rootFolderURL)
+    }
+
+    func refreshLibrary() {
+        libraryStore.refresh()
+    }
+
+    func openLibraryItem(_ item: LibraryMediaItem) {
+        libraryStore.open(item)
+    }
+
+    func revealLibraryItem(_ item: LibraryMediaItem) {
+        libraryStore.reveal(item)
     }
 
     private static func prettifiedTitle(from line: String, fallback: String) -> String {

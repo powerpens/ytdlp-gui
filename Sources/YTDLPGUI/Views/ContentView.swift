@@ -4,7 +4,6 @@ import UniformTypeIdentifiers
 struct ContentView: View {
     @EnvironmentObject private var viewModel: AppViewModel
     @EnvironmentObject private var toolchainManager: ToolchainManager
-    @EnvironmentObject private var cookieManager: CookieManager
 
     var body: some View {
         NavigationSplitView {
@@ -15,44 +14,91 @@ struct ContentView: View {
         .navigationSplitViewStyle(.balanced)
         .toolbar {
             ToolbarItemGroup {
-                Button {
-                    viewModel.chooseDestination()
-                } label: {
-                    Label("Destination", systemImage: "folder")
+                if viewModel.selectedSection == .downloads {
+                    Button {
+                        viewModel.chooseDestination()
+                    } label: {
+                        Label("Choose Folder", systemImage: "folder")
+                    }
+                    .help("Choose the destination folder for downloaded files")
+
+                    Button {
+                        viewModel.startDownload()
+                    } label: {
+                        Label("Start", systemImage: "arrow.down.circle.fill")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(!viewModel.canStartDownload)
+                } else {
+                    Button {
+                        viewModel.refreshLibrary()
+                    } label: {
+                        Label("Refresh", systemImage: "arrow.clockwise")
+                    }
+
+                    Button {
+                        viewModel.openLibraryFolder()
+                    } label: {
+                        Label("Open Folder", systemImage: "folder")
+                    }
                 }
 
-                Button {
-                    viewModel.startDownload()
-                } label: {
-                    Label("Start", systemImage: "arrow.down.circle.fill")
+                SettingsLink {
+                    Label("Settings", systemImage: "gearshape")
                 }
-                .buttonStyle(.borderedProminent)
-                .disabled(!viewModel.canStartDownload)
             }
         }
-        .alert("Something went wrong", isPresented: Binding(
-            get: { viewModel.errorMessage != nil },
-            set: { if !$0 { viewModel.errorMessage = nil } }
-        )) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(viewModel.errorMessage ?? "")
+        .alert(item: $viewModel.activeAlert) { alert in
+            Alert(
+                title: Text(alert.title),
+                message: Text(alert.message),
+                dismissButton: .default(Text("OK"))
+            )
         }
     }
 
     private var sidebar: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 18) {
             Text("yt-dlp GUI")
-                .font(.largeTitle.weight(.semibold))
-            Text("A native macOS front-end for quick downloads, playlist capture, and authenticated media workflows.")
+                .font(.system(size: 30, weight: .bold, design: .rounded))
+
+            Text("Download videos and browse what you’ve saved.")
                 .foregroundStyle(.secondary)
 
-            ToolchainStatusCard(
-                status: toolchainManager.status,
-                isInstalling: toolchainManager.isInstalling,
-                installLog: toolchainManager.installLog,
-                installAction: viewModel.installMissingTools
-            )
+            VStack(alignment: .leading, spacing: 10) {
+                SidebarButton(
+                    title: "Downloads",
+                    subtitle: "Paste links, choose presets, and monitor queue progress.",
+                    systemImage: "arrow.down.circle",
+                    isSelected: viewModel.selectedSection == .downloads
+                ) {
+                    viewModel.selectedSection = .downloads
+                }
+
+                SidebarButton(
+                    title: "Library",
+                    subtitle: "\(viewModel.libraryStore.items.count) item(s) in \(viewModel.libraryStore.rootFolderURL.lastPathComponent)",
+                    systemImage: "film.stack",
+                    isSelected: viewModel.selectedSection == .library
+                ) {
+                    viewModel.selectedSection = .library
+                }
+            }
+
+            if !toolchainManager.status.isReady {
+                GroupBox {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("Downloads are unavailable until yt-dlp and ffmpeg are installed.", systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                        Text("Open Settings to install or inspect the toolchain.")
+                            .foregroundStyle(.secondary)
+                        SettingsLink {
+                            Label("Open Settings", systemImage: "gearshape")
+                        }
+                    }
+                    .padding(16)
+                }
+            }
 
             if let infoBanner = viewModel.infoBanner {
                 Label(infoBanner, systemImage: "checkmark.circle.fill")
@@ -62,12 +108,24 @@ struct ContentView: View {
             Spacer()
         }
         .padding(24)
-        .frame(minWidth: 280)
+        .frame(minWidth: 300)
+        .background(Color(nsColor: .windowBackgroundColor))
     }
 
+    @ViewBuilder
     private var detailContent: some View {
+        switch viewModel.selectedSection {
+        case .downloads:
+            downloadsDetail
+        case .library:
+            libraryDetail
+        }
+    }
+
+    private var downloadsDetail: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                DownloadHeroCard()
                 DownloadComposerCard()
                 ActiveDownloadsCard()
                 RecentHistoryCard()
@@ -102,6 +160,71 @@ struct ContentView: View {
             return false
         }
     }
+
+    private var libraryDetail: some View {
+        LibraryBrowserView()
+            .padding(24)
+            .background(Color(nsColor: .windowBackgroundColor))
+    }
+}
+
+private struct SidebarButton: View {
+    let title: String
+    let subtitle: String
+    let systemImage: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: systemImage)
+                    .font(.title3)
+                    .frame(width: 28)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.headline)
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(isSelected ? Color.primary.opacity(0.8) : Color.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer()
+            }
+            .padding(14)
+            .background(isSelected ? Color.accentColor.opacity(0.14) : Color.clear)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct DownloadHeroCard: View {
+    @EnvironmentObject private var viewModel: AppViewModel
+
+    var body: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Drop a URL to save it offline")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                Text("Downloads appear in the browser view automatically after they finish.")
+                    .foregroundStyle(.secondary)
+                HStack {
+                    Label(viewModel.destinationPath, systemImage: "folder.fill")
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                    Spacer()
+                    if !viewModel.activeJobs.isEmpty {
+                        Label("\(viewModel.activeJobs.count) active", systemImage: "arrow.down.circle.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .font(.caption)
+            }
+            .padding(24)
+        }
+        .frame(minHeight: 170)
+    }
 }
 
 private struct DownloadComposerCard: View {
@@ -111,18 +234,25 @@ private struct DownloadComposerCard: View {
     var body: some View {
         GroupBox {
             VStack(alignment: .leading, spacing: 16) {
-                Text("New Download")
-                    .font(.title2.weight(.semibold))
-
-                Text("Paste one or more URLs. Each line becomes a source for the same download request.")
-                    .foregroundStyle(.secondary)
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("New Download")
+                            .font(.title2.weight(.semibold))
+                        Text("Paste one or more URLs. Each line becomes a source for the same request.")
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button("Paste from Clipboard") {
+                        viewModel.pasteFromClipboard()
+                    }
+                }
 
                 TextEditor(text: $viewModel.urlText)
                     .font(.body.monospaced())
-                    .frame(minHeight: 120)
-                    .padding(8)
+                    .frame(minHeight: 130)
+                    .padding(10)
                     .background(Color(nsColor: .textBackgroundColor))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
 
                 HStack(alignment: .top, spacing: 16) {
                     VStack(alignment: .leading, spacing: 8) {
@@ -141,11 +271,11 @@ private struct DownloadComposerCard: View {
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Destination")
+                        Text("Destination Folder")
                             .font(.headline)
                         Text(viewModel.destinationPath)
                             .textSelection(.enabled)
-                            .lineLimit(2)
+                            .lineLimit(3)
                         Button("Choose Folder...") {
                             viewModel.chooseDestination()
                         }
@@ -307,7 +437,13 @@ private struct RecentHistoryCard: View {
                                     .lineLimit(1)
                                 Text(job.detailMessage)
                                     .font(.caption)
-                                    .foregroundStyle(.tertiary)
+                                    .foregroundStyle(job.failureSummary == nil ? .tertiary : .primary)
+                                if let failureSummary = job.failureSummary {
+                                    Text(failureSummary)
+                                        .font(.caption2)
+                                        .foregroundStyle(.tertiary)
+                                        .lineLimit(2)
+                                }
                             }
                             Spacer()
                             VStack(alignment: .trailing, spacing: 6) {
@@ -338,35 +474,203 @@ private struct RecentHistoryCard: View {
     }
 }
 
-private struct ToolchainStatusCard: View {
-    let status: ToolchainStatus
-    let isInstalling: Bool
-    let installLog: String
-    let installAction: () -> Void
+private struct LibraryBrowserView: View {
+    @EnvironmentObject private var viewModel: AppViewModel
+
+    private let columns = [
+        GridItem(.adaptive(minimum: 170, maximum: 220), spacing: 16)
+    ]
 
     var body: some View {
-        GroupBox {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Toolchain")
+        HSplitView {
+            GroupBox {
+                VStack(alignment: .leading, spacing: 14) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Saved Media")
+                                .font(.title2.weight(.semibold))
+                            Text("\(viewModel.libraryStore.items.count) item(s)")
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Button("Open in Finder") {
+                            viewModel.openLibraryFolder()
+                        }
+                    }
+
+                    if viewModel.libraryStore.items.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("No media found yet.")
+                                .font(.headline)
+                            Text("Downloads saved into this folder will appear here automatically.")
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    } else {
+                        ScrollView {
+                            LazyVGrid(columns: columns, spacing: 16) {
+                                ForEach(viewModel.libraryStore.items) { item in
+                                    LibraryItemCard(
+                                        item: item,
+                                        isSelected: viewModel.selectedLibraryItemID == item.id
+                                    ) {
+                                        viewModel.selectedLibraryItemID = item.id
+                                    }
+                                }
+                            }
+                            .padding(.vertical, 4)
+                        }
+                    }
+                }
+                .padding(20)
+            }
+
+            GroupBox {
+                if let item = viewModel.selectedLibraryItem {
+                    LibraryDetailPane(item: item)
+                } else {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Select an item")
+                            .font(.headline)
+                        Text("Choose something from the library to preview its details and open it.")
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .padding(20)
+                }
+            }
+            .frame(minWidth: 260, idealWidth: 320)
+        }
+    }
+}
+
+private struct LibraryItemCard: View {
+    @EnvironmentObject private var viewModel: AppViewModel
+    let item: LibraryMediaItem
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 10) {
+                Image(nsImage: viewModel.libraryStore.icon(for: item))
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(height: 98)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 18)
+                    .foregroundStyle(.secondary)
+
+                Text(item.fileName)
                     .font(.headline)
+                    .lineLimit(2)
 
                 HStack {
-                    statusRow("yt-dlp", binary: status.ytDLP)
-                    statusRow("ffmpeg", binary: status.ffmpeg)
+                    Text(item.kind.title)
+                    Spacer()
+                    Text(item.fileExtension)
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
+            .background(isSelected ? Color.accentColor.opacity(0.14) : Color(nsColor: .controlBackgroundColor))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct LibraryDetailPane: View {
+    @EnvironmentObject private var viewModel: AppViewModel
+    let item: LibraryMediaItem
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Spacer()
+                Image(nsImage: viewModel.libraryStore.icon(for: item))
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 260, height: 170)
+                    .foregroundStyle(.secondary)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                Spacer()
+            }
+
+            Text(item.fileName)
+                .font(.title3.weight(.semibold))
+                .textSelection(.enabled)
+
+            DetailRow(label: "Type", value: item.kind.title)
+            DetailRow(label: "Format", value: item.fileExtension)
+            DetailRow(label: "Size", value: ByteCountFormatter.string(fromByteCount: item.fileSize, countStyle: .file))
+            DetailRow(label: "Modified", value: item.modifiedAt?.formatted(date: .abbreviated, time: .shortened) ?? "--")
+            DetailRow(label: "Path", value: item.url.path)
+
+            Spacer()
+
+            HStack {
+                Button("Reveal in Finder") {
+                    viewModel.revealLibraryItem(item)
+                }
+                Button("Open") {
+                    viewModel.openLibraryItem(item)
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
+        .padding(20)
+    }
+}
+
+private struct DetailRow: View {
+    let label: String
+    let value: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label.uppercased())
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.callout)
+                .textSelection(.enabled)
+        }
+    }
+}
+
+struct SettingsView: View {
+    @EnvironmentObject private var preferences: PreferencesStore
+    @EnvironmentObject private var toolchainManager: ToolchainManager
+    @EnvironmentObject private var viewModel: AppViewModel
+
+    var body: some View {
+        Form {
+            Section("Toolchain") {
+                LabeledContent("yt-dlp") {
+                    Text(toolchainManager.status.ytDLP?.path ?? "Missing")
+                        .foregroundStyle(toolchainManager.status.ytDLP == nil ? .orange : .primary)
                 }
 
-                if !status.isReady {
-                    Text("The app can guide installation through Homebrew when the tools are missing.")
+                LabeledContent("ffmpeg") {
+                    Text(toolchainManager.status.ffmpeg?.path ?? "Missing")
+                        .foregroundStyle(toolchainManager.status.ffmpeg == nil ? .orange : .primary)
+                }
+
+                if !toolchainManager.status.isReady {
+                    Text("This app can install missing tools with Homebrew, or you can install them yourself and relaunch.")
                         .foregroundStyle(.secondary)
-                    Button(isInstalling ? "Installing..." : "Install Missing Tools") {
-                        installAction()
+                    Button(toolchainManager.isInstalling ? "Installing..." : "Install Missing Tools") {
+                        viewModel.installMissingTools()
                     }
-                    .disabled(isInstalling)
+                    .disabled(toolchainManager.isInstalling)
                 }
 
-                if !installLog.isEmpty {
+                if !toolchainManager.installLog.isEmpty {
                     ScrollView {
-                        Text(installLog)
+                        Text(toolchainManager.installLog)
                             .font(.caption.monospaced())
                             .textSelection(.enabled)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -374,64 +678,42 @@ private struct ToolchainStatusCard: View {
                     .frame(maxHeight: 140)
                 }
             }
-            .padding(16)
-        }
-    }
 
-    private func statusRow(_ title: String, binary: ToolBinary?) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-            if let binary {
-                Label(binary.version ?? binary.path, systemImage: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
-            } else {
-                Label("Not found", systemImage: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.orange)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-struct SettingsView: View {
-    @EnvironmentObject private var preferences: PreferencesStore
-    @EnvironmentObject private var toolchainManager: ToolchainManager
-
-    var body: some View {
-        Form {
-            Picker("Default preset", selection: $preferences.preferredPreset) {
-                ForEach(MediaPreset.allCases) { preset in
-                    Text(preset.title).tag(preset)
+            Section("Downloads") {
+                Picker("Default preset", selection: $preferences.preferredPreset) {
+                    ForEach(MediaPreset.allCases) { preset in
+                        Text(preset.title).tag(preset)
+                    }
                 }
-            }
 
-            Stepper(value: $preferences.concurrencyLimit, in: 1...4) {
-                Text("Concurrent downloads: \(preferences.concurrencyLimit)")
-            }
+                Stepper(value: $preferences.concurrencyLimit, in: 1...4) {
+                    Text("Concurrent downloads: \(preferences.concurrencyLimit)")
+                }
 
-            LabeledContent("Default destination") {
-                Text(preferences.defaultDestinationPath)
-                    .textSelection(.enabled)
-            }
+                LabeledContent("Library folder") {
+                    Text(preferences.defaultDestinationPath)
+                        .textSelection(.enabled)
+                }
 
-            LabeledContent("yt-dlp") {
-                Text(toolchainManager.status.ytDLP?.path ?? "Missing")
-                    .foregroundStyle(toolchainManager.status.ytDLP == nil ? .orange : .primary)
-            }
-
-            LabeledContent("ffmpeg") {
-                Text(toolchainManager.status.ffmpeg?.path ?? "Missing")
-                    .foregroundStyle(toolchainManager.status.ffmpeg == nil ? .orange : .primary)
+                Button("Open Library Folder") {
+                    viewModel.openLibraryFolder()
+                }
             }
         }
         .formStyle(.grouped)
         .padding(24)
-        .frame(width: 520)
+        .frame(width: 560)
     }
 }
 
 private extension DownloadJob {
+    var failureSummary: String? {
+        if case let .failed(failure) = state {
+            return failure.technicalDetails
+        }
+        return nil
+    }
+
     var stateLabel: String {
         switch state {
         case .queued:
@@ -440,8 +722,8 @@ private extension DownloadJob {
             "Running"
         case .completed:
             "Completed"
-        case let .failed(category):
-            "Failed • \(category.rawValue)"
+        case let .failed(failure):
+            failure.category.displayTitle
         case .cancelled:
             "Cancelled"
         }
