@@ -316,6 +316,8 @@ final class AppViewModel: ObservableObject {
             }
         case let .outputPath(path):
             activeJobs[index].outputPath = path
+        case let .title(title):
+            activeJobs[index].title = title
         case let .rawOutput(line):
             activeJobs[index].lastOutputLine = line
             if activeJobs[index].outputPath == nil {

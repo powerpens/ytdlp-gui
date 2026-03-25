@@ -9,6 +9,7 @@ enum DownloadEvent {
     case state(DownloadJobState, message: String)
     case progress(DownloadProgress)
     case outputPath(String)
+    case title(String)
     case rawOutput(String)
 }
 

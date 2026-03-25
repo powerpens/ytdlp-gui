@@ -106,4 +106,23 @@ struct DownloadEngineTests {
         #expect(arguments.contains("--skip-album-art"))
         #expect(arguments.contains("https://open.spotify.com/track/abc123"))
     }
+
+    @Test
+    func parsesSpotDLBatchProgressAndStage() {
+        let line = "Processing query 2/5: Chef Paul - Carbonara"
+
+        let progress = SpotDLDownloadProvider.parseProgressLine(line)
+        let stage = SpotDLDownloadProvider.parseStage(from: line)
+
+        #expect(progress?.percentText == "2/5")
+        #expect(progress?.fractionCompleted == 0.4)
+        #expect(progress?.sizeText == "Track 2 of 5 • Chef Paul - Carbonara")
+        #expect(stage == "Finding audio source • Track 2 of 5")
+    }
+
+    @Test
+    func extractsSpotDLDisplayTitle() {
+        let title = SpotDLDownloadProvider.parseDisplayTitle(from: "Downloading Chef Paul - Carbonara")
+        #expect(title == "Chef Paul - Carbonara")
+    }
 }

@@ -112,6 +112,9 @@ final class SpotDLDownloadProvider: @unchecked Sendable, DownloadProvider {
             for line in lines {
                 outputContext.record(line)
                 onEvent(.rawOutput(line))
+                if let title = Self.parseDisplayTitle(from: line) {
+                    onEvent(.title(title))
+                }
                 if let stage = Self.parseStage(from: line) {
                     onEvent(.state(.running, message: stage))
                 }
@@ -197,44 +200,128 @@ final class SpotDLDownloadProvider: @unchecked Sendable, DownloadProvider {
         return arguments + request.urls
     }
 
-    private static func parseStage(from line: String) -> String? {
+    static func parseStage(from line: String) -> String? {
         let normalized = line.lowercased()
+        let batchLabel = parseBatchProgressLabel(from: line)
         if normalized.contains("retrieving spotify metadata") || normalized.contains("fetching song metadata") {
-            return "Resolving Spotify metadata"
+            return appendBatchLabel("Resolving Spotify metadata", batchLabel: batchLabel)
         }
-        if normalized.contains("found result") || normalized.contains("searching youtube") || normalized.contains("search query") {
-            return "Finding audio source"
+        if normalized.contains("found result") || normalized.contains("searching youtube") || normalized.contains("search query") || normalized.contains("processing query") {
+            return appendBatchLabel("Finding audio source", batchLabel: batchLabel)
         }
-        if normalized.contains("downloading") {
-            return "Downloading audio"
+        if normalized.contains("downloading") || normalized.contains("downloaded") {
+            return appendBatchLabel("Downloading audio", batchLabel: batchLabel)
         }
         if normalized.contains("converting") {
-            return "Converting"
+            return appendBatchLabel("Converting", batchLabel: batchLabel)
         }
         if normalized.contains("metadata") || normalized.contains("album art") || normalized.contains("embedding") {
-            return "Writing tags and artwork"
+            return appendBatchLabel("Writing tags and artwork", batchLabel: batchLabel)
         }
         return nil
     }
 
-    private static func parseProgressLine(_ line: String) -> DownloadProgress? {
+    static func parseProgressLine(_ line: String) -> DownloadProgress? {
         let percentPattern = #"(\d+(?:\.\d+)?)%"#
-        guard let regex = try? NSRegularExpression(pattern: percentPattern) else { return nil }
+        guard let regex = try? NSRegularExpression(pattern: percentPattern) else { return parseBatchOnlyProgressLine(line) }
         let range = NSRange(location: 0, length: line.utf16.count)
         guard let match = regex.firstMatch(in: line, range: range),
               let percentRange = Range(match.range(at: 1), in: line),
               let percent = Double(line[percentRange])
         else {
-            return nil
+            return parseBatchOnlyProgressLine(line)
         }
+
+        let batchLabel = parseBatchProgressLabel(from: line)
+        let titleLabel = parseDisplayTitle(from: line)
+        let detailText = [batchLabel, titleLabel].compactMap { $0 }.joined(separator: " • ")
 
         return DownloadProgress(
             fractionCompleted: percent / 100.0,
             percentText: "\(Int(percent))%",
-            sizeText: nil,
+            sizeText: detailText.isEmpty ? nil : detailText,
             speedText: nil,
             etaText: nil
         )
+    }
+
+    static func parseDisplayTitle(from line: String) -> String? {
+        let patterns = [
+            #"(?i)processing query\s+\d+\s*/\s*\d+\s*:\s*(.+)$"#,
+            #"(?i)found result.*?:\s*(.+)$"#,
+            #"(?i)downloading\s+(.+)$"#,
+            #"(?i)converting\s+(.+)$"#,
+            #"(?i)writing metadata for\s+(.+)$"#
+        ]
+
+        for pattern in patterns {
+            guard let regex = try? NSRegularExpression(pattern: pattern) else { continue }
+            let range = NSRange(location: 0, length: line.utf16.count)
+            guard let match = regex.firstMatch(in: line, range: range),
+                  let titleRange = Range(match.range(at: 1), in: line)
+            else {
+                continue
+            }
+
+            let title = line[titleRange]
+                .trimmingCharacters(in: CharacterSet(charactersIn: "\" "))
+            if !title.isEmpty {
+                return title
+            }
+        }
+        return nil
+    }
+
+    private static func parseBatchOnlyProgressLine(_ line: String) -> DownloadProgress? {
+        guard let batchProgress = parseBatchProgress(from: line) else { return nil }
+        let titleLabel = parseDisplayTitle(from: line)
+        let detailText = [batchProgress.label, titleLabel].compactMap { $0 }.joined(separator: " • ")
+        return DownloadProgress(
+            fractionCompleted: batchProgress.fraction,
+            percentText: batchProgress.percentText,
+            sizeText: detailText.isEmpty ? nil : detailText,
+            speedText: nil,
+            etaText: nil
+        )
+    }
+
+    private static func appendBatchLabel(_ stage: String, batchLabel: String?) -> String {
+        guard let batchLabel, !batchLabel.isEmpty else { return stage }
+        return "\(stage) • \(batchLabel)"
+    }
+
+    private static func parseBatchProgressLabel(from line: String) -> String? {
+        parseBatchProgress(from: line)?.label
+    }
+
+    private static func parseBatchProgress(from line: String) -> (fraction: Double, percentText: String, label: String)? {
+        let patterns = [
+            #"\[(\d+)\s*/\s*(\d+)\]"#,
+            #"(?i)\b(\d+)\s*/\s*(\d+)\b"#
+        ]
+
+        for pattern in patterns {
+            guard let regex = try? NSRegularExpression(pattern: pattern) else { continue }
+            let range = NSRange(location: 0, length: line.utf16.count)
+            guard let match = regex.firstMatch(in: line, range: range),
+                  let currentRange = Range(match.range(at: 1), in: line),
+                  let totalRange = Range(match.range(at: 2), in: line),
+                  let current = Double(line[currentRange]),
+                  let total = Double(line[totalRange]),
+                  total > 0
+            else {
+                continue
+            }
+
+            let safeCurrent = min(current, total)
+            return (
+                fraction: safeCurrent / total,
+                percentText: "\(Int(safeCurrent))/\(Int(total))",
+                label: "Track \(Int(safeCurrent)) of \(Int(total))"
+            )
+        }
+
+        return nil
     }
 
     private static func parseOutputPath(from line: String) -> String? {
