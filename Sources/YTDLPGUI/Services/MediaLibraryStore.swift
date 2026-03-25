@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+@preconcurrency import QuickLookThumbnailing
 
 @MainActor
 final class MediaLibraryStore: ObservableObject {
@@ -8,6 +9,7 @@ final class MediaLibraryStore: ObservableObject {
     @Published private(set) var lastRefreshAt: Date?
 
     private let fileManager: FileManager
+    private let thumbnailCache = NSCache<NSURL, NSImage>()
 
     init(rootFolderURL: URL, fileManager: FileManager = .default) {
         self.rootFolderURL = rootFolderURL
@@ -81,6 +83,37 @@ final class MediaLibraryStore: ObservableObject {
         return icon
     }
 
+    func previewImage(for item: LibraryMediaItem, size: CGSize) async -> NSImage {
+        let cacheKey = item.url as NSURL
+        if let cached = thumbnailCache.object(forKey: cacheKey) {
+            return cached
+        }
+
+        guard item.kind == .video else {
+            let fallback = icon(for: item)
+            thumbnailCache.setObject(fallback, forKey: cacheKey)
+            return fallback
+        }
+
+        let request = QLThumbnailGenerator.Request(
+            fileAt: item.url,
+            size: size,
+            scale: NSScreen.main?.backingScaleFactor ?? 2,
+            representationTypes: .thumbnail
+        )
+
+        do {
+            let thumbnail = try await generateThumbnail(request: request)
+            let image = thumbnail.nsImage
+            thumbnailCache.setObject(image, forKey: cacheKey)
+            return image
+        } catch {
+            let fallback = icon(for: item)
+            thumbnailCache.setObject(fallback, forKey: cacheKey)
+            return fallback
+        }
+    }
+
     private func ensureRootFolderExists() {
         try? fileManager.createDirectory(at: rootFolderURL, withIntermediateDirectories: true)
     }
@@ -96,4 +129,15 @@ final class MediaLibraryStore: ObservableObject {
         return .other
     }
 
+    private func generateThumbnail(request: QLThumbnailGenerator.Request) async throws -> QLThumbnailRepresentation {
+        try await withCheckedThrowingContinuation { continuation in
+            QLThumbnailGenerator.shared.generateBestRepresentation(for: request) { thumbnail, error in
+                if let thumbnail {
+                    continuation.resume(returning: thumbnail)
+                } else {
+                    continuation.resume(throwing: error ?? CocoaError(.fileReadUnknown))
+                }
+            }
+        }
+    }
 }

@@ -553,13 +553,10 @@ private struct LibraryItemCard: View {
     var body: some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 10) {
-                Image(nsImage: viewModel.libraryStore.icon(for: item))
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
+                LibraryPreviewImage(item: item, size: CGSize(width: 220, height: 140))
                     .frame(height: 98)
                     .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 18)
-                    .foregroundStyle(.secondary)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 Text(item.fileName)
                     .font(.headline)
@@ -590,11 +587,8 @@ private struct LibraryDetailPane: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Spacer()
-                Image(nsImage: viewModel.libraryStore.icon(for: item))
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
+                LibraryPreviewImage(item: item, size: CGSize(width: 320, height: 220))
                     .frame(width: 260, height: 170)
-                    .foregroundStyle(.secondary)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                 Spacer()
             }
@@ -622,6 +616,35 @@ private struct LibraryDetailPane: View {
             }
         }
         .padding(20)
+    }
+}
+
+private struct LibraryPreviewImage: View {
+    @EnvironmentObject private var viewModel: AppViewModel
+    let item: LibraryMediaItem
+    let size: CGSize
+
+    @State private var previewImage: NSImage?
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(nsColor: .controlBackgroundColor))
+            if let previewImage {
+                Image(nsImage: previewImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } else {
+                Image(nsImage: viewModel.libraryStore.icon(for: item))
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .padding(22)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .task(id: item.id) {
+            previewImage = await viewModel.libraryStore.previewImage(for: item, size: size)
+        }
     }
 }
 
