@@ -54,6 +54,12 @@ final class ToolchainManager: ObservableObject {
         FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".local/bin/spotdl").path
     ]
 
+    private let commandFallbacks: [String: [String]] = [
+        "brew": ["/opt/homebrew/bin/brew", "/usr/local/bin/brew"],
+        "pipx": ["/opt/homebrew/bin/pipx", "/usr/local/bin/pipx", FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".local/bin/pipx").path],
+        "python3": ["/opt/homebrew/bin/python3", "/usr/local/bin/python3", "/usr/bin/python3"]
+    ]
+
     init() {
         refresh()
     }
@@ -67,10 +73,6 @@ final class ToolchainManager: ObservableObject {
     }
 
     func installMissingTools() async throws {
-        guard let brewPath = ProcessRunner.which("brew") else {
-            throw ToolchainInstallError.brewMissing
-        }
-
         isInstalling = true
         installLog = ""
         defer { isInstalling = false }
@@ -81,14 +83,17 @@ final class ToolchainManager: ObservableObject {
         ].compactMap { $0 }
 
         if !brewPackages.isEmpty {
+            guard let brewPath = resolveCommand(named: "brew") else {
+                throw ToolchainInstallError.brewMissing
+            }
             let output = try ProcessRunner.run(brewPath, arguments: ["install"] + brewPackages)
             installLog += output
         }
 
         if status.spotDL == nil {
-            if let pipxPath = ProcessRunner.which("pipx") {
+            if let pipxPath = resolveCommand(named: "pipx") {
                 installLog += try ProcessRunner.run(pipxPath, arguments: ["install", "spotdl"])
-            } else if let python3Path = ProcessRunner.which("python3") {
+            } else if let python3Path = resolveCommand(named: "python3") {
                 installLog += try ProcessRunner.run(python3Path, arguments: ["-m", "pip", "install", "--user", "spotdl"])
             } else {
                 throw ToolchainInstallError.installFailed("spotDL is missing and neither pipx nor python3 is available to install it.")
@@ -108,7 +113,7 @@ final class ToolchainManager: ObservableObject {
 
     private func resolveBinary(named command: String) -> ToolBinary? {
         let explicitPath = searchPaths.first { $0.hasSuffix("/\(command)") && FileManager.default.isExecutableFile(atPath: $0) }
-        let resolvedPath = explicitPath ?? ProcessRunner.which(command)
+        let resolvedPath = explicitPath ?? resolveCommand(named: command)
 
         guard let path = resolvedPath else {
             return nil
@@ -120,5 +125,19 @@ final class ToolchainManager: ObservableObject {
             .first
 
         return ToolBinary(path: path, version: version)
+    }
+
+    private func resolveCommand(named command: String) -> String? {
+        if let fallback = commandFallbacks[command]?.first(where: { FileManager.default.isExecutableFile(atPath: $0) }) {
+            return fallback
+        }
+
+        return ProcessRunner.which(command)
+    }
+}
+
+extension ToolchainManager {
+    func testingResolveCommand(named command: String) -> String? {
+        resolveCommand(named: command)
     }
 }

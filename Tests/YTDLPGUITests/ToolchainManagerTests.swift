@@ -1,6 +1,7 @@
 import Testing
 @testable import YTDLPGUI
 
+@MainActor
 struct ToolchainManagerTests {
     @Test
     func reportsModeSpecificReadiness() {
@@ -15,5 +16,13 @@ struct ToolchainManagerTests {
 
         let full = ToolchainStatus(ytDLP: ytDLP, ffmpeg: ffmpeg, spotDL: spotDL)
         #expect(full.isReady(for: .spotifyMusic))
+    }
+
+    @Test
+    func resolvesFallbackCommandsWithoutShellPath() {
+        let manager = ToolchainManager()
+
+        #expect(manager.testingResolveCommand(named: "brew") != nil)
+        #expect(manager.testingResolveCommand(named: "python3") != nil)
     }
 }
