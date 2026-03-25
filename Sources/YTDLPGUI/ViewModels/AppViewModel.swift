@@ -23,12 +23,17 @@ final class AppViewModel: ObservableObject {
 
     @Published var selectedSection: WorkspaceSection = .downloads
     @Published var urlText = ""
+    @Published var selectedDownloadMode: DownloadMode
     @Published var selectedPreset: MediaPreset
+    @Published var selectedMusicPreset: MusicFormatPreset
     @Published var destinationPath: String
     @Published var playlistMode: PlaylistMode = .auto
     @Published var includeSubtitles = false
     @Published var embedThumbnail = false
     @Published var writeInfoJSON = false
+    @Published var embedMusicArtwork = true
+    @Published var writeMusicMetadata = true
+    @Published var preservePlaylistOrder = true
     @Published var formatOverride = ""
     @Published var extraFlags = ""
     @Published var isAdvancedExpanded = false
@@ -43,7 +48,9 @@ final class AppViewModel: ObservableObject {
     private let cookieManager: CookieManager
     private let historyStore: HistoryStore
     let libraryStore: MediaLibraryStore
-    private let downloadEngine = DownloadEngine()
+    private let providerRouter = DownloadProviderRouter(
+        providers: [YTDLPDownloadProvider(), SpotDLDownloadProvider()]
+    )
 
     init(
         preferences: PreferencesStore,
@@ -56,7 +63,9 @@ final class AppViewModel: ObservableObject {
         self.cookieManager = cookieManager
         self.historyStore = historyStore
         libraryStore = MediaLibraryStore(rootFolderURL: URL(fileURLWithPath: preferences.defaultDestinationPath))
+        selectedDownloadMode = preferences.preferredDownloadMode
         selectedPreset = preferences.preferredPreset
+        selectedMusicPreset = preferences.preferredMusicPreset
         destinationPath = preferences.defaultDestinationPath
         recentJobs = historyStore.load()
 
@@ -67,7 +76,9 @@ final class AppViewModel: ObservableObject {
     }
 
     var canStartDownload: Bool {
-        !parsedURLs.isEmpty && activeJobs.count < preferences.concurrencyLimit
+        !parsedURLs.isEmpty
+            && activeJobs.count < preferences.concurrencyLimit
+            && (selectedDownloadMode != .spotifyMusic || parsedURLs.allSatisfy(Self.isLikelySpotifyURL))
     }
 
     var parsedURLs: [String] {
@@ -78,18 +89,18 @@ final class AppViewModel: ObservableObject {
     }
 
     func startDownload() {
-        guard toolchainManager.status.isReady,
-              let ytDLPPath = toolchainManager.status.ytDLP?.path,
-              let ffmpegPath = toolchainManager.status.ffmpeg?.path
-        else {
+        guard toolchainManager.status.isReady(for: selectedDownloadMode) else {
             presentAlert(
                 title: "Download Tools Missing",
-                message: "yt-dlp and ffmpeg both need to be available before a download can start.\n\nOpen Settings to install or inspect the toolchain."
+                message: selectedDownloadMode == .spotifyMusic
+                    ? "spotDL and ffmpeg both need to be available before a Spotify music download can start.\n\nOpen Settings to install or inspect the toolchain."
+                    : "yt-dlp and ffmpeg both need to be available before a download can start.\n\nOpen Settings to install or inspect the toolchain."
             )
             return
         }
 
         let request = DownloadRequest(
+            mode: selectedDownloadMode,
             urls: parsedURLs,
             preset: selectedPreset,
             destinationPath: destinationPath,
@@ -101,8 +112,22 @@ final class AppViewModel: ObservableObject {
                 writeInfoJSON: writeInfoJSON,
                 formatOverride: formatOverride,
                 extraFlags: extraFlags
+            ),
+            musicOptions: MusicOptions(
+                embedArtwork: embedMusicArtwork,
+                writeMetadata: writeMusicMetadata,
+                preservePlaylistOrder: preservePlaylistOrder,
+                formatPreset: selectedMusicPreset
             )
         )
+
+        if request.mode == .spotifyMusic && !request.urls.allSatisfy(Self.isLikelySpotifyURL) {
+            presentAlert(
+                title: "Spotify Links Required",
+                message: "Spotify Music mode expects Spotify track, album, or playlist URLs.\n\nSwitch back to Video or Audio mode for general media links."
+            )
+            return
+        }
 
         guard cookieManager.validate(source: request.cookieSource) else {
             presentAlert(
@@ -126,17 +151,23 @@ final class AppViewModel: ObservableObject {
         activeAlert = nil
 
         do {
-            try downloadEngine.start(
+            guard let provider = providerRouter.provider(for: request) else {
+                presentAlert(title: "Unsupported Download Mode", message: "This request couldn't be routed to an installed download provider.")
+                activeJobs.removeAll { $0.id == job.id }
+                return
+            }
+
+            activeJobs[0].providerID = provider.id
+            try provider.start(
                 id: job.id,
                 request: request,
-                configuration: DownloadEngineConfiguration(ytDLPPath: ytDLPPath, ffmpegPath: ffmpegPath)
+                configuration: toolchainManager.status
             ) { [weak self] event in
                 Task { @MainActor in
                     self?.handle(event, for: job.id)
                 }
             }
 
-            selectedPreset = preferences.preferredPreset
             preferences.defaultDestinationPath = destinationPath
         } catch {
             activeJobs.removeAll { $0.id == job.id }
@@ -145,17 +176,22 @@ final class AppViewModel: ObservableObject {
     }
 
     func cancel(_ job: DownloadJob) {
-        downloadEngine.cancel(id: job.id)
+        providerRouter.cancel(job: job)
     }
 
     func retry(_ job: DownloadJob) {
         urlText = job.request.urls.joined(separator: "\n")
+        selectedDownloadMode = job.request.mode
         selectedPreset = job.request.preset
+        selectedMusicPreset = job.request.musicOptions.formatPreset
         destinationPath = job.request.destinationPath
         playlistMode = job.request.playlistMode
         includeSubtitles = job.request.options.includeSubtitles
         embedThumbnail = job.request.options.embedThumbnail
         writeInfoJSON = job.request.options.writeInfoJSON
+        embedMusicArtwork = job.request.musicOptions.embedArtwork
+        writeMusicMetadata = job.request.musicOptions.writeMetadata
+        preservePlaylistOrder = job.request.musicOptions.preservePlaylistOrder
         formatOverride = job.request.options.formatOverride
         extraFlags = job.request.options.extraFlags
         cookieManager.selectedSource = job.request.cookieSource
@@ -232,6 +268,7 @@ final class AppViewModel: ObservableObject {
         case let .state(state, message):
             activeJobs[index].state = state
             activeJobs[index].detailMessage = message
+            activeJobs[index].currentStage = message
             if case let .failed(failure) = state {
                 activeJobs[index].detailMessage = failure.summary
                 activeJobs[index].lastOutputLine = failure.technicalDetails
@@ -248,6 +285,9 @@ final class AppViewModel: ObservableObject {
             activeJobs[index].detailMessage = [progress.sizeText, progress.speedText, progress.etaText]
                 .compactMap { $0 }
                 .joined(separator: " • ")
+            if activeJobs[index].detailMessage.isEmpty, let currentStage = activeJobs[index].currentStage {
+                activeJobs[index].detailMessage = currentStage
+            }
             if let percentText = progress.fractionCompleted {
                 activeJobs[index].title = "\(Int(percentText * 100))% • \(activeJobs[index].request.urls.first ?? "Download")"
             }
@@ -344,5 +384,12 @@ final class AppViewModel: ObservableObject {
             return URL(fileURLWithPath: line.replacingOccurrences(of: "[download] Destination: ", with: "")).lastPathComponent
         }
         return fallback
+    }
+
+    static func isLikelySpotifyURL(_ url: String) -> Bool {
+        let lowered = url.lowercased()
+        return lowered.contains("open.spotify.com/track/")
+            || lowered.contains("open.spotify.com/album/")
+            || lowered.contains("open.spotify.com/playlist/")
     }
 }

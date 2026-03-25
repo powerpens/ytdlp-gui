@@ -7,6 +7,12 @@ final class PreferencesStore: ObservableObject {
     @Published var preferredPreset: MediaPreset {
         didSet { defaults.set(preferredPreset.rawValue, forKey: Keys.preferredPreset) }
     }
+    @Published var preferredDownloadMode: DownloadMode {
+        didSet { defaults.set(preferredDownloadMode.rawValue, forKey: Keys.preferredDownloadMode) }
+    }
+    @Published var preferredMusicPreset: MusicFormatPreset {
+        didSet { defaults.set(preferredMusicPreset.rawValue, forKey: Keys.preferredMusicPreset) }
+    }
     @Published var defaultDestinationPath: String {
         didSet { defaults.set(defaultDestinationPath, forKey: Keys.defaultDestinationPath) }
     }
@@ -18,6 +24,8 @@ final class PreferencesStore: ObservableObject {
 
     private enum Keys {
         static let preferredPreset = "preferredPreset"
+        static let preferredDownloadMode = "preferredDownloadMode"
+        static let preferredMusicPreset = "preferredMusicPreset"
         static let defaultDestinationPath = "defaultDestinationPath"
         static let concurrencyLimit = "concurrencyLimit"
     }
@@ -39,6 +47,8 @@ final class PreferencesStore: ObservableObject {
         }
 
         preferredPreset = MediaPreset(rawValue: defaults.string(forKey: Keys.preferredPreset) ?? "") ?? .bestVideo
+        preferredDownloadMode = DownloadMode(rawValue: defaults.string(forKey: Keys.preferredDownloadMode) ?? "") ?? .video
+        preferredMusicPreset = MusicFormatPreset(rawValue: defaults.string(forKey: Keys.preferredMusicPreset) ?? "") ?? .bestQualityMP3
         defaultDestinationPath = uiTestLibraryPath ?? defaults.string(forKey: Keys.defaultDestinationPath) ?? Self.defaultLibraryURL.path
         let storedLimit = defaults.integer(forKey: Keys.concurrencyLimit)
         concurrencyLimit = storedLimit > 0 ? storedLimit : 2

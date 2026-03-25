@@ -17,6 +17,8 @@
 		A00000000000000000000106 /* PreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000006 /* PreferencesStore.swift */; };
 		A00000000000000000000107 /* ProcessRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000007 /* ProcessRunner.swift */; };
 		A00000000000000000000107A /* QuickLookPreviewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000007A /* QuickLookPreviewController.swift */; };
+		A00000000000000000000107B /* DownloadProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000007B /* DownloadProvider.swift */; };
+		A00000000000000000000107C /* SpotDLDownloadProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000007C /* SpotDLDownloadProvider.swift */; };
 		A00000000000000000000108 /* ToolchainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000008 /* ToolchainManager.swift */; };
 		A00000000000000000000109 /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000009 /* AppViewModel.swift */; };
 		A0000000000000000000010A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000A /* ContentView.swift */; };
@@ -55,6 +57,8 @@
 		A00000000000000000000006 /* PreferencesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesStore.swift; sourceTree = "<group>"; };
 		A00000000000000000000007 /* ProcessRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessRunner.swift; sourceTree = "<group>"; };
 		A00000000000000000000007A /* QuickLookPreviewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLookPreviewController.swift; sourceTree = "<group>"; };
+		A00000000000000000000007B /* DownloadProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadProvider.swift; sourceTree = "<group>"; };
+		A00000000000000000000007C /* SpotDLDownloadProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotDLDownloadProvider.swift; sourceTree = "<group>"; };
 		A00000000000000000000008 /* ToolchainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolchainManager.swift; sourceTree = "<group>"; };
 		A00000000000000000000009 /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
 		A0000000000000000000000A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -160,6 +164,8 @@
 				A00000000000000000000006 /* PreferencesStore.swift */,
 				A00000000000000000000007 /* ProcessRunner.swift */,
 				A00000000000000000000007A /* QuickLookPreviewController.swift */,
+				A00000000000000000000007B /* DownloadProvider.swift */,
+				A00000000000000000000007C /* SpotDLDownloadProvider.swift */,
 				A00000000000000000000008 /* ToolchainManager.swift */,
 			);
 			path = Services;
@@ -340,6 +346,8 @@
 				A00000000000000000000106 /* PreferencesStore.swift in Sources */,
 				A00000000000000000000107 /* ProcessRunner.swift in Sources */,
 				A00000000000000000000107A /* QuickLookPreviewController.swift in Sources */,
+				A00000000000000000000107B /* DownloadProvider.swift in Sources */,
+				A00000000000000000000107C /* SpotDLDownloadProvider.swift in Sources */,
 				A00000000000000000000108 /* ToolchainManager.swift in Sources */,
 				A00000000000000000000109 /* AppViewModel.swift in Sources */,
 				A0000000000000000000010A /* ContentView.swift in Sources */,

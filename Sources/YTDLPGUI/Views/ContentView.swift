@@ -247,7 +247,9 @@ private struct DownloadComposerCard: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("New Download")
                             .font(.title2.weight(.semibold))
-                        Text("Paste one or more URLs. Each line becomes a source for the same request.")
+                        Text(viewModel.selectedDownloadMode == .spotifyMusic
+                             ? "Paste Spotify track, album, or playlist links. Each line becomes a source for the same request."
+                             : "Paste one or more URLs. Each line becomes a source for the same request.")
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
@@ -263,6 +265,21 @@ private struct DownloadComposerCard: View {
                     .background(Color(nsColor: .textBackgroundColor))
                     .clipShape(RoundedRectangle(cornerRadius: 16))
 
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Mode")
+                        .font(.headline)
+                    Picker("Mode", selection: $viewModel.selectedDownloadMode) {
+                        ForEach(DownloadMode.allCases) { mode in
+                            Text(mode.title).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
+                    Text(viewModel.selectedDownloadMode.summary)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
                 ViewThatFits(in: .horizontal) {
                     HStack(alignment: .top, spacing: 16) {
                         presetSection
@@ -276,61 +293,7 @@ private struct DownloadComposerCard: View {
                 }
 
                 DisclosureGroup("Advanced Options", isExpanded: $viewModel.isAdvancedExpanded) {
-                    VStack(alignment: .leading, spacing: 14) {
-                        Picker("Playlist", selection: $viewModel.playlistMode) {
-                            ForEach(PlaylistMode.allCases) { mode in
-                                Text(mode.title).tag(mode)
-                            }
-                        }
-
-                        HStack(spacing: 16) {
-                            Toggle("Embed subtitles", isOn: $viewModel.includeSubtitles)
-                            Toggle("Embed thumbnail", isOn: $viewModel.embedThumbnail)
-                            Toggle("Write info JSON", isOn: $viewModel.writeInfoJSON)
-                        }
-
-                        Picker("Browser Cookies", selection: Binding(
-                            get: {
-                                if case let .browser(browser) = cookieManager.selectedSource {
-                                    return browser
-                                }
-                                return .safari
-                            },
-                            set: { browser in
-                                cookieManager.useBrowser(browser)
-                            }
-                        )) {
-                            ForEach(BrowserCookieSource.allCases) { browser in
-                                Text(browser.title).tag(browser)
-                            }
-                        }
-
-                        HStack(spacing: 12) {
-                            Button("Use Selected Browser") {
-                                if case .browser = cookieManager.selectedSource {
-                                    return
-                                }
-                                cookieManager.useBrowser(.safari)
-                            }
-
-                            Button("Import Cookie File...") {
-                                cookieManager.importCookieFile()
-                            }
-
-                            Button("Clear Cookies") {
-                                cookieManager.clearSelection()
-                            }
-                        }
-
-                        Text("Cookie Source: \(cookieManager.selectedSource.description)")
-                            .foregroundStyle(.secondary)
-
-                        TextField("Format override (optional)", text: $viewModel.formatOverride)
-                            .textFieldStyle(.roundedBorder)
-                        TextField("Extra yt-dlp flags (optional)", text: $viewModel.extraFlags)
-                            .textFieldStyle(.roundedBorder)
-                    }
-                    .padding(.top, 12)
+                    advancedOptionsContent
                 }
 
                 HStack {
@@ -352,23 +315,36 @@ private struct DownloadComposerCard: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Preset")
                 .font(.headline)
-            Picker("Preset", selection: $viewModel.selectedPreset) {
-                ForEach(MediaPreset.allCases) { preset in
-                    Text(preset.title).tag(preset)
+            if viewModel.selectedDownloadMode == .spotifyMusic {
+                Picker("Preset", selection: $viewModel.selectedMusicPreset) {
+                    ForEach(MusicFormatPreset.allCases) { preset in
+                        Text(preset.title).tag(preset)
+                    }
                 }
-            }
-            .pickerStyle(.segmented)
+                .pickerStyle(.segmented)
 
-            Text(viewModel.selectedPreset.summary)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+                Text(viewModel.selectedMusicPreset.summary)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Picker("Preset", selection: $viewModel.selectedPreset) {
+                    ForEach(MediaPreset.allCases) { preset in
+                        Text(preset.title).tag(preset)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                Text(viewModel.selectedPreset.summary)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var destinationSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Destination Folder")
+            Text(viewModel.selectedDownloadMode == .spotifyMusic ? "Music Destination" : "Destination Folder")
                 .font(.headline)
             Text(viewModel.destinationPath)
                 .textSelection(.enabled)
@@ -379,6 +355,85 @@ private struct DownloadComposerCard: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private var advancedOptionsContent: some View {
+        if viewModel.selectedDownloadMode == .spotifyMusic {
+            VStack(alignment: .leading, spacing: 14) {
+                Picker("Playlist", selection: $viewModel.playlistMode) {
+                    ForEach(PlaylistMode.allCases) { mode in
+                        Text(mode.title).tag(mode)
+                    }
+                }
+
+                HStack(spacing: 16) {
+                    Toggle("Embed album art", isOn: $viewModel.embedMusicArtwork)
+                    Toggle("Write metadata tags", isOn: $viewModel.writeMusicMetadata)
+                    Toggle("Preserve playlist order", isOn: $viewModel.preservePlaylistOrder)
+                }
+
+                TextField("Extra spotDL flags (optional)", text: $viewModel.extraFlags)
+                    .textFieldStyle(.roundedBorder)
+            }
+            .padding(.top, 12)
+        } else {
+            VStack(alignment: .leading, spacing: 14) {
+                Picker("Playlist", selection: $viewModel.playlistMode) {
+                    ForEach(PlaylistMode.allCases) { mode in
+                        Text(mode.title).tag(mode)
+                    }
+                }
+
+                HStack(spacing: 16) {
+                    Toggle("Embed subtitles", isOn: $viewModel.includeSubtitles)
+                    Toggle("Embed thumbnail", isOn: $viewModel.embedThumbnail)
+                    Toggle("Write info JSON", isOn: $viewModel.writeInfoJSON)
+                }
+
+                Picker("Browser Cookies", selection: Binding(
+                    get: {
+                        if case let .browser(browser) = cookieManager.selectedSource {
+                            return browser
+                        }
+                        return .safari
+                    },
+                    set: { browser in
+                        cookieManager.useBrowser(browser)
+                    }
+                )) {
+                    ForEach(BrowserCookieSource.allCases) { browser in
+                        Text(browser.title).tag(browser)
+                    }
+                }
+
+                HStack(spacing: 12) {
+                    Button("Use Selected Browser") {
+                        if case .browser = cookieManager.selectedSource {
+                            return
+                        }
+                        cookieManager.useBrowser(.safari)
+                    }
+
+                    Button("Import Cookie File...") {
+                        cookieManager.importCookieFile()
+                    }
+
+                    Button("Clear Cookies") {
+                        cookieManager.clearSelection()
+                    }
+                }
+
+                Text("Cookie Source: \(cookieManager.selectedSource.description)")
+                    .foregroundStyle(.secondary)
+
+                TextField("Format override (optional)", text: $viewModel.formatOverride)
+                    .textFieldStyle(.roundedBorder)
+                TextField("Extra yt-dlp flags (optional)", text: $viewModel.extraFlags)
+                    .textFieldStyle(.roundedBorder)
+            }
+            .padding(.top, 12)
+        }
     }
 }
 
@@ -408,7 +463,9 @@ private struct ActiveDownloadsCard: View {
                             ProgressView(value: job.progress.fractionCompleted ?? 0)
                                 .tint(.accentColor)
 
-                            Text(job.detailMessage.isEmpty ? job.request.preset.title : job.detailMessage)
+                            Text(job.detailMessage.isEmpty
+                                 ? (job.request.mode == .spotifyMusic ? job.request.musicOptions.formatPreset.title : job.request.preset.title)
+                                 : job.detailMessage)
                                 .foregroundStyle(.secondary)
 
                             if let lastLine = job.lastOutputLine {
@@ -876,8 +933,13 @@ struct SettingsView: View {
                         .foregroundStyle(toolchainManager.status.ffmpeg == nil ? .orange : .primary)
                 }
 
-                if !toolchainManager.status.isReady {
-                    Text("This app can install missing tools with Homebrew, or you can install them yourself and relaunch.")
+                LabeledContent("spotDL") {
+                    Text(toolchainManager.status.spotDL?.path ?? "Missing")
+                        .foregroundStyle(toolchainManager.status.spotDL == nil ? .orange : .primary)
+                }
+
+                if !toolchainManager.status.isReady || toolchainManager.status.spotDL == nil {
+                    Text("This app can install yt-dlp and ffmpeg with Homebrew, then install spotDL with pipx or python3 -m pip when needed.")
                         .foregroundStyle(.secondary)
                     Button(toolchainManager.isInstalling ? "Installing..." : "Install Missing Tools") {
                         viewModel.installMissingTools()
@@ -897,8 +959,20 @@ struct SettingsView: View {
             }
 
             Section("Downloads") {
+                Picker("Default mode", selection: $preferences.preferredDownloadMode) {
+                    ForEach(DownloadMode.allCases) { mode in
+                        Text(mode.title).tag(mode)
+                    }
+                }
+
                 Picker("Default preset", selection: $preferences.preferredPreset) {
                     ForEach(MediaPreset.allCases) { preset in
+                        Text(preset.title).tag(preset)
+                    }
+                }
+
+                Picker("Spotify preset", selection: $preferences.preferredMusicPreset) {
+                    ForEach(MusicFormatPreset.allCases) { preset in
                         Text(preset.title).tag(preset)
                     }
                 }
