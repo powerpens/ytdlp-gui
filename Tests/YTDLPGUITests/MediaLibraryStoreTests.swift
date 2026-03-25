@@ -29,7 +29,8 @@ struct MediaLibraryStoreTests {
             fileName: "sample.mp4",
             kind: .video,
             fileSize: 1_024,
-            modifiedAt: Date()
+            modifiedAt: Date(),
+            metadata: LibraryMediaMetadata()
         )
 
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
@@ -51,5 +52,27 @@ struct MediaLibraryStoreTests {
         }
 
         #expect(providerCalls == 1)
+    }
+
+    @Test
+    func prefersMusicMetadataForDisplay() {
+        let item = LibraryMediaItem(
+            id: URL(fileURLWithPath: "/tmp/test.m4a"),
+            url: URL(fileURLWithPath: "/tmp/test.m4a"),
+            fileName: "test.m4a",
+            kind: .audio,
+            fileSize: 2_048,
+            modifiedAt: nil,
+            metadata: LibraryMediaMetadata(
+                title: "Carbonara",
+                artist: "Chef Paul",
+                album: "Two Headed Chef",
+                duration: 182
+            )
+        )
+
+        #expect(item.displayTitle == "Carbonara")
+        #expect(item.secondaryText == "Chef Paul • Two Headed Chef")
+        #expect(item.durationText == "03:02")
     }
 }

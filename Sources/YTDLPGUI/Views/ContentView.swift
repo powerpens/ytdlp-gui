@@ -752,23 +752,39 @@ private struct LibraryListRow: View {
 
     private var rowText: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(item.fileName)
+            Text(item.displayTitle)
                 .font(.headline)
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
+                .textSelection(.enabled)
+
+            if let secondaryText = item.secondaryText {
+                Text(secondaryText)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
 
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: 8) {
                     Text(item.kind.title)
                     Text("•")
                     Text(item.fileExtension)
+                    if let durationText = item.durationText {
+                        Text("•")
+                        Text(durationText)
+                    }
                     Text("•")
                     Text(ByteCountFormatter.string(fromByteCount: item.fileSize, countStyle: .file))
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("\(item.kind.title) • \(item.fileExtension)")
+                    Text(
+                        [item.kind.title, item.fileExtension, item.durationText]
+                            .compactMap { $0 }
+                            .joined(separator: " • ")
+                    )
                     Text(ByteCountFormatter.string(fromByteCount: item.fileSize, countStyle: .file))
                 }
             }
@@ -800,7 +816,7 @@ private struct LibraryItemCard: View {
                     .frame(maxWidth: .infinity)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                Text(item.fileName)
+                Text(item.displayTitle)
                     .font(.headline)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
@@ -808,10 +824,17 @@ private struct LibraryItemCard: View {
                     .frame(height: 46, alignment: .topLeading)
                     .fixedSize(horizontal: false, vertical: true)
 
-                HStack {
-                    Text(item.kind.title)
-                    Spacer()
-                    Text(item.fileExtension)
+                VStack(alignment: .leading, spacing: 4) {
+                    if let secondaryText = item.secondaryText {
+                        Text(secondaryText)
+                            .lineLimit(1)
+                    }
+
+                    HStack {
+                        Text(item.kind.title)
+                        Spacer()
+                        Text(item.durationText ?? item.fileExtension)
+                    }
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -841,12 +864,27 @@ private struct LibraryDetailPane: View {
                 Spacer()
             }
 
-            Text(item.fileName)
+            Text(item.displayTitle)
                 .font(.title3.weight(.semibold))
                 .textSelection(.enabled)
 
+            if let secondaryText = item.secondaryText {
+                Text(secondaryText)
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+            }
+
             DetailRow(label: "Type", value: item.kind.title)
             DetailRow(label: "Format", value: item.fileExtension)
+            if let durationText = item.durationText {
+                DetailRow(label: "Duration", value: durationText)
+            }
+            if let artist = item.metadata.artist {
+                DetailRow(label: "Artist", value: artist)
+            }
+            if let album = item.metadata.album {
+                DetailRow(label: "Album", value: album)
+            }
             DetailRow(label: "Size", value: ByteCountFormatter.string(fromByteCount: item.fileSize, countStyle: .file))
             DetailRow(label: "Modified", value: item.modifiedAt?.formatted(date: .abbreviated, time: .shortened) ?? "--")
             DetailRow(label: "Path", value: item.url.path)

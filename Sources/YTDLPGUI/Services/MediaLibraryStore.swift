@@ -1,4 +1,5 @@
 import AppKit
+import AVFoundation
 import Foundation
 @preconcurrency import QuickLookThumbnailing
 
@@ -12,6 +13,7 @@ final class MediaLibraryStore: ObservableObject {
 
     private let fileManager: FileManager
     private let thumbnailCache = NSCache<NSURL, NSImage>()
+    private let artworkCache = NSCache<NSURL, NSImage>()
     private let thumbnailProvider: ThumbnailProvider
 
     init(
@@ -35,6 +37,7 @@ final class MediaLibraryStore: ObservableObject {
     func refresh() {
         ensureRootFolderExists()
         thumbnailCache.removeAllObjects()
+        artworkCache.removeAllObjects()
 
         let resourceKeys: Set<URLResourceKey> = [
             .isRegularFileKey,
@@ -57,13 +60,20 @@ final class MediaLibraryStore: ObservableObject {
                 return nil
             }
 
+            let kind = Self.kind(for: url.pathExtension)
+            let extractedMetadata = Self.extractMetadata(for: url, kind: kind)
+            if let artworkImage = extractedMetadata.artwork {
+                artworkCache.setObject(artworkImage, forKey: url as NSURL)
+            }
+
             return LibraryMediaItem(
                 id: url,
                 url: url,
                 fileName: url.lastPathComponent,
-                kind: Self.kind(for: url.pathExtension),
+                kind: kind,
                 fileSize: Int64(values.fileSize ?? 0),
-                modifiedAt: values.contentModificationDate
+                modifiedAt: values.contentModificationDate,
+                metadata: extractedMetadata.metadata
             )
         }
         .sorted { lhs, rhs in
@@ -103,6 +113,12 @@ final class MediaLibraryStore: ObservableObject {
             return
         }
 
+        if let artwork = artworkCache.object(forKey: cacheKey) {
+            thumbnailCache.setObject(artwork, forKey: cacheKey)
+            completion(artwork)
+            return
+        }
+
         guard item.kind == .video else {
             let fallback = icon(for: item)
             thumbnailCache.setObject(fallback, forKey: cacheKey)
@@ -134,6 +150,45 @@ final class MediaLibraryStore: ObservableObject {
             return .audio
         }
         return .other
+    }
+
+    private static func extractMetadata(for url: URL, kind: LibraryMediaKind) -> (metadata: LibraryMediaMetadata, artwork: NSImage?) {
+        guard kind == .audio || kind == .video else {
+            return (LibraryMediaMetadata(), nil)
+        }
+
+        let asset = AVURLAsset(url: url)
+        let metadata = asset.commonMetadata
+
+        let title = stringValue(forCommonKey: .commonKeyTitle, in: metadata)
+        let artist = stringValue(forCommonKey: .commonKeyArtist, in: metadata)
+        let album = stringValue(forCommonKey: .commonKeyAlbumName, in: metadata)
+        let duration = asset.duration.seconds.isFinite && asset.duration.seconds > 0 ? asset.duration.seconds : nil
+        let artwork = artworkImage(from: metadata)
+
+        return (
+            LibraryMediaMetadata(
+                title: title,
+                artist: artist,
+                album: album,
+                duration: duration
+            ),
+            artwork
+        )
+    }
+
+    private static func stringValue(forCommonKey key: AVMetadataKey, in items: [AVMetadataItem]) -> String? {
+        items.first(where: { $0.commonKey == key })?.stringValue
+    }
+
+    private static func artworkImage(from items: [AVMetadataItem]) -> NSImage? {
+        for item in items where item.commonKey == .commonKeyArtwork {
+            if let data = item.dataValue, let image = NSImage(data: data) {
+                return image
+            }
+        }
+
+        return nil
     }
 
     nonisolated private static func quickLookThumbnail(
