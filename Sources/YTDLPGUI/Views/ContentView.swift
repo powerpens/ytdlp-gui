@@ -504,10 +504,6 @@ private struct LibraryBrowserView: View {
     @EnvironmentObject private var viewModel: AppViewModel
     @AppStorage("libraryBrowserLayout") private var libraryBrowserLayoutRaw = LibraryBrowserLayout.list.rawValue
 
-    private let galleryColumns = [
-        GridItem(.adaptive(minimum: 170, maximum: 220), spacing: 16)
-    ]
-
     private var libraryBrowserLayout: LibraryBrowserLayout {
         get { LibraryBrowserLayout(rawValue: libraryBrowserLayoutRaw) ?? .list }
         nonmutating set { libraryBrowserLayoutRaw = newValue.rawValue }
@@ -555,18 +551,22 @@ private struct LibraryBrowserView: View {
                                 .accessibilityIdentifier("library.list")
                                 .padding(.vertical, 4)
                             } else {
-                                LazyVGrid(columns: galleryColumns, spacing: 16) {
-                                    ForEach(viewModel.libraryStore.items) { item in
-                                        LibraryItemCard(
-                                            item: item,
-                                            isSelected: viewModel.selectedLibraryItemID == item.id
-                                        ) {
-                                            viewModel.selectedLibraryItemID = item.id
+                                GeometryReader { geometry in
+                                    LazyVGrid(columns: galleryColumns(for: geometry.size.width), spacing: 16) {
+                                        ForEach(viewModel.libraryStore.items) { item in
+                                            LibraryItemCard(
+                                                item: item,
+                                                isSelected: viewModel.selectedLibraryItemID == item.id
+                                            ) {
+                                                viewModel.selectedLibraryItemID = item.id
+                                            }
                                         }
                                     }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.vertical, 4)
                                 }
+                                .frame(minHeight: 360)
                                 .accessibilityIdentifier("library.gallery")
-                                .padding(.vertical, 4)
                             }
                         }
                     }
@@ -626,6 +626,22 @@ private struct LibraryBrowserView: View {
         .pickerStyle(.segmented)
         .frame(width: 170)
         .accessibilityIdentifier("library.viewPicker")
+    }
+
+    private func galleryColumns(for availableWidth: CGFloat) -> [GridItem] {
+        let columnCount: Int
+        if availableWidth < 460 {
+            columnCount = 1
+        } else if availableWidth < 760 {
+            columnCount = 2
+        } else {
+            columnCount = max(2, Int((availableWidth + 16) / 236))
+        }
+
+        return Array(
+            repeating: GridItem(.flexible(minimum: 0, maximum: .infinity), spacing: 16, alignment: .top),
+            count: columnCount
+        )
     }
 }
 
@@ -729,6 +745,7 @@ private struct LibraryItemCard: View {
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .frame(height: 46, alignment: .topLeading)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 HStack {
                     Text(item.kind.title)
@@ -739,9 +756,10 @@ private struct LibraryItemCard: View {
                 .foregroundStyle(.secondary)
             }
             .padding(14)
-            .frame(maxWidth: .infinity, minHeight: 220, alignment: .topLeading)
+            .frame(maxWidth: .infinity, minHeight: 220, maxHeight: 220, alignment: .topLeading)
             .background(isSelected ? Color.accentColor.opacity(0.14) : Color(nsColor: .controlBackgroundColor))
             .clipShape(RoundedRectangle(cornerRadius: 16))
+            .contentShape(RoundedRectangle(cornerRadius: 16))
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("library.galleryItem.\(item.fileName)")
