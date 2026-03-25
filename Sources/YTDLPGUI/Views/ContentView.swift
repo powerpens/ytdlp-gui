@@ -62,9 +62,12 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 18) {
             Text("yt-dlp GUI")
                 .font(.system(size: 30, weight: .bold, design: .rounded))
+                .lineLimit(1)
+                .minimumScaleFactor(0.65)
 
             Text("Download videos and browse what you’ve saved.")
                 .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
 
             VStack(alignment: .leading, spacing: 10) {
                 SidebarButton(
@@ -111,7 +114,7 @@ struct ContentView: View {
             Spacer()
         }
         .padding(24)
-        .frame(minWidth: 300)
+        .frame(minWidth: 220, idealWidth: 280)
         .background(Color(nsColor: .windowBackgroundColor))
     }
 
@@ -194,11 +197,14 @@ private struct SidebarButton: View {
                 }
                 Spacer()
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(14)
             .background(isSelected ? Color.accentColor.opacity(0.14) : Color.clear)
             .clipShape(RoundedRectangle(cornerRadius: 14))
+            .contentShape(RoundedRectangle(cornerRadius: 14))
         }
         .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -257,31 +263,15 @@ private struct DownloadComposerCard: View {
                     .background(Color(nsColor: .textBackgroundColor))
                     .clipShape(RoundedRectangle(cornerRadius: 16))
 
-                HStack(alignment: .top, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Preset")
-                            .font(.headline)
-                        Picker("Preset", selection: $viewModel.selectedPreset) {
-                            ForEach(MediaPreset.allCases) { preset in
-                                Text(preset.title).tag(preset)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-
-                        Text(viewModel.selectedPreset.summary)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .top, spacing: 16) {
+                        presetSection
+                        destinationSection
                     }
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Destination Folder")
-                            .font(.headline)
-                        Text(viewModel.destinationPath)
-                            .textSelection(.enabled)
-                            .lineLimit(3)
-                        Button("Choose Folder...") {
-                            viewModel.chooseDestination()
-                        }
+                    VStack(alignment: .leading, spacing: 16) {
+                        presetSection
+                        destinationSection
                     }
                 }
 
@@ -356,6 +346,39 @@ private struct DownloadComposerCard: View {
             }
             .padding(20)
         }
+    }
+
+    private var presetSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Preset")
+                .font(.headline)
+            Picker("Preset", selection: $viewModel.selectedPreset) {
+                ForEach(MediaPreset.allCases) { preset in
+                    Text(preset.title).tag(preset)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            Text(viewModel.selectedPreset.summary)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var destinationSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Destination Folder")
+                .font(.headline)
+            Text(viewModel.destinationPath)
+                .textSelection(.enabled)
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
+            Button("Choose Folder...") {
+                viewModel.chooseDestination()
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -494,30 +517,18 @@ private struct LibraryBrowserView: View {
         HSplitView {
             GroupBox {
                 VStack(alignment: .leading, spacing: 14) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Saved Media")
-                                .font(.title2.weight(.semibold))
-                            Text("\(viewModel.libraryStore.items.count) item(s)")
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Picker("View", selection: Binding(
-                            get: { libraryBrowserLayout },
-                            set: { libraryBrowserLayout = $0 }
-                        )) {
-                            ForEach(LibraryBrowserLayout.allCases) { layout in
-                                Text(layout.title).tag(layout)
+                    ViewThatFits(in: .horizontal) {
+                        libraryHeaderRow
+                        VStack(alignment: .leading, spacing: 12) {
+                            libraryHeaderTitle
+                            HStack(spacing: 12) {
+                                libraryViewPicker
+                                Button("Open in Finder") {
+                                    viewModel.openLibraryFolder()
+                                }
+                                .accessibilityIdentifier("library.openInFinder")
                             }
                         }
-                        .pickerStyle(.segmented)
-                        .frame(width: 170)
-                        .accessibilityIdentifier("library.viewPicker")
-
-                        Button("Open in Finder") {
-                            viewModel.openLibraryFolder()
-                        }
-                        .accessibilityIdentifier("library.openInFinder")
                     }
 
                     if viewModel.libraryStore.items.isEmpty {
@@ -562,7 +573,7 @@ private struct LibraryBrowserView: View {
                 }
                 .padding(20)
             }
-            .frame(minWidth: 360, idealWidth: 420)
+            .frame(minWidth: 300, idealWidth: 400)
 
             GroupBox {
                 if let item = viewModel.selectedLibraryItem {
@@ -578,8 +589,43 @@ private struct LibraryBrowserView: View {
                     .padding(20)
                 }
             }
-            .frame(minWidth: 340, idealWidth: 420)
+            .frame(minWidth: 300, idealWidth: 420)
         }
+    }
+
+    private var libraryHeaderRow: some View {
+        HStack(alignment: .top, spacing: 12) {
+            libraryHeaderTitle
+            Spacer(minLength: 12)
+            libraryViewPicker
+            Button("Open in Finder") {
+                viewModel.openLibraryFolder()
+            }
+            .accessibilityIdentifier("library.openInFinder")
+        }
+    }
+
+    private var libraryHeaderTitle: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Saved Media")
+                .font(.title2.weight(.semibold))
+            Text("\(viewModel.libraryStore.items.count) item(s)")
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var libraryViewPicker: some View {
+        Picker("View", selection: Binding(
+            get: { libraryBrowserLayout },
+            set: { libraryBrowserLayout = $0 }
+        )) {
+            ForEach(LibraryBrowserLayout.allCases) { layout in
+                Text(layout.title).tag(layout)
+            }
+        }
+        .pickerStyle(.segmented)
+        .frame(width: 170)
+        .accessibilityIdentifier("library.viewPicker")
     }
 }
 
