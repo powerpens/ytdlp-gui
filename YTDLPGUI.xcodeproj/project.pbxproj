@@ -1,12 +1,13 @@
 // !$*UTF8*$!
 {
-	objectVersion = 77;
 	archiveVersion = 1;
 	classes = {
 	};
+	objectVersion = 71;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6388C9863048386E0065D96A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6388C9853048386E0065D96A /* Assets.xcassets */; };
 		A00000000000000000000101 /* YTDLPGUIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000001 /* YTDLPGUIApp.swift */; };
 		A00000000000000000000102 /* DownloadModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000002 /* DownloadModels.swift */; };
 		A00000000000000000000102A /* LibraryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000002A /* LibraryModels.swift */; };
@@ -26,8 +27,8 @@
 		A0000000000000000000010C /* HistoryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000C /* HistoryStoreTests.swift */; };
 		A0000000000000000000010D /* PreferencesStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000D /* PreferencesStoreTests.swift */; };
 		A0000000000000000000010E /* MediaLibraryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000010 /* MediaLibraryStoreTests.swift */; };
-		A00000000000000000000110 /* ToolchainManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000013 /* ToolchainManagerTests.swift */; };
 		A0000000000000000000010F /* YTDLPGUIUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000011 /* YTDLPGUIUITests.swift */; };
+		A00000000000000000000110 /* ToolchainManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000013 /* ToolchainManagerTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -48,6 +49,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		6388C9853048386E0065D96A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A00000000000000000000001 /* YTDLPGUIApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YTDLPGUIApp.swift; sourceTree = "<group>"; };
 		A00000000000000000000002 /* DownloadModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadModels.swift; sourceTree = "<group>"; };
 		A00000000000000000000002A /* LibraryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryModels.swift; sourceTree = "<group>"; };
@@ -143,6 +145,7 @@
 				A00000000000000000000606 /* Services */,
 				A00000000000000000000607 /* ViewModels */,
 				A00000000000000000000608 /* Views */,
+				6388C9853048386E0065D96A /* Assets.xcassets */,
 			);
 			path = YTDLPGUI;
 			sourceTree = "<group>";
@@ -298,7 +301,6 @@
 			);
 			mainGroup = A00000000000000000000600;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
 			productRefGroup = A00000000000000000000603 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -315,6 +317,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6388C9863048386E0065D96A /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -447,8 +450,8 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
-				ENABLE_TESTABILITY = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_TESTABILITY = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "yt-dlp GUI";
@@ -461,8 +464,8 @@
 				MARKETING_VERSION = 0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.silashowe.YTDLPGUI;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
